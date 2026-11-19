@@ -100,6 +100,11 @@
       <button class="change" id="changeThemeBtn" type="button">Changer</button>
     </div>
 
+    <div class="themeBar">
+      <button class="change" id="musicBtn" type="button">🎵 Musique : OFF</button>
+      <button class="change" id="soundBtn" type="button">🔊 Sons : ON</button>
+    </div>
+
     <div class="levels" aria-label="Niveau de difficulté">
       <button class="level active" data-level="0" type="button">Facile</button>
       <button class="level" data-level="1" type="button">Normal</button>
@@ -347,29 +352,109 @@
       messageTimer = setTimeout(() => message.classList.remove('show'), 850);
     }
 
-    function playSound(type) {
-      try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return;
-        const context = new AudioContextClass();
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        if (type === 'goal') {
-          oscillator.frequency.setValueAtTime(660, context.currentTime);
-          oscillator.frequency.exponentialRampToValueAtTime(990, context.currentTime + 0.18);
-        } else {
-          oscillator.frequency.setValueAtTime(300, context.currentTime);
-          oscillator.frequency.exponentialRampToValueAtTime(120, context.currentTime + 0.18);
-        }
-        gain.gain.setValueAtTime(0.12, context.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.25);
-        oscillator.start();
-        oscillator.stop(context.currentTime + 0.25);
-        oscillator.onended = () => context.close().catch(() => {});
-      } catch (error) {}
+    /* ===== Sons : sifflet, ambiance, musique originale ===== */
+    let actx = null, sfx = null, mus = null, noiseBuf = null, mTimer = null, mStep = 0, mNext = 0;
+    let soundOn = true, musicOn = false;
+    try { soundOn = localStorage.getItem('pc_sound') !== '0'; } catch (e) {}
+    function audio() {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        actx = new AC();
+        sfx = actx.createGain(); sfx.gain.value = 0.9; sfx.connect(actx.destination);
+        mus = actx.createGain(); mus.gain.value = 0.45; mus.connect(actx.destination);
+        noiseBuf = actx.createBuffer(1, actx.sampleRate, actx.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return actx;
     }
+    function tone(out, t, f, d, type, vol, lp, f2) {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t);
+      if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+      let node = o;
+      if (lp) { const b = actx.createBiquadFilter(); b.type = 'lowpass'; b.frequency.value = lp; o.connect(b); node = b; }
+      node.connect(g);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+      g.connect(out); o.start(t); o.stop(t + d + 0.03);
+    }
+    function noise(out, t, d, vol, freq, type, swell) {
+      const s = actx.createBufferSource(), g = actx.createGain(), f = actx.createBiquadFilter();
+      s.buffer = noiseBuf; s.loop = true; f.type = type || 'highpass'; f.frequency.value = freq; f.Q.value = 0.6;
+      if (swell) { g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(vol, t + swell); }
+      else g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + d);
+      s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + d + 0.03);
+    }
+    function whistle(long) {
+      if (!soundOn || !audio()) return;
+      const t = actx.currentTime, d = long ? 0.7 : 0.32;
+      const o = actx.createOscillator(), lfo = actx.createOscillator(), lg = actx.createGain(), g = actx.createGain();
+      o.type = 'sine'; o.frequency.value = 2900;
+      lfo.frequency.value = 34; lg.gain.value = 140; lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.35, t + 0.03);
+      g.gain.setValueAtTime(0.35, t + d - 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+      o.connect(g); g.connect(sfx); o.start(t); lfo.start(t); o.stop(t + d + 0.03); lfo.stop(t + d + 0.03);
+      noise(sfx, t, d, 0.05, 4500, 'highpass');
+    }
+    function playSound(type) {
+      if (!soundOn || !audio()) return;
+      const t = actx.currentTime;
+      if (type === 'goal') {
+        noise(sfx, t, 1.6, 0.4, 900, 'bandpass', 0.35);
+        [523, 659, 784, 1047].forEach((f, i) => tone(sfx, t + i * 0.09, f, 0.3, 'triangle', 0.2));
+      } else {
+        noise(sfx, t, 0.25, 0.3, 300, 'lowpass');
+        tone(sfx, t, 420, 0.5, 'sawtooth', 0.12, 1200, 190);
+      }
+    }
+    const BPM = 124, ROOT = [48, 43, 45, 41], CH = [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]];
+    const MEL = [
+      [79,0,0,79,0,76,0,79,0,0,81,0,79,0,76,0],
+      [74,0,0,74,0,79,0,74,0,0,76,0,74,0,71,0],
+      [76,0,0,76,0,81,0,76,0,0,79,0,76,0,72,0],
+      [72,0,0,76,0,79,0,76,0,0,72,0,74,0,72,0]
+    ];
+    const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+    function kick(t) {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+      g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      o.connect(g); g.connect(mus); o.start(t); o.stop(t + 0.25);
+    }
+    function playStep(n, t) {
+      const q = n % 64, bar = Math.floor(q / 16), i = q % 16;
+      if (i % 4 === 0) kick(t);
+      if (i === 4 || i === 12) { noise(mus, t, 0.14, 0.45, 1500); tone(mus, t, 190, 0.08, 'triangle', 0.22); }
+      if (i % 2 === 1) noise(mus, t, 0.04, 0.1, 7000);
+      if ([0, 3, 6, 8, 11, 14].includes(i)) tone(mus, t, hz(ROOT[bar]), 0.2, 'sawtooth', 0.28, 420);
+      if ([0, 6, 10].includes(i)) CH[bar].forEach(m => tone(mus, t, hz(m), 0.16, 'sawtooth', 0.06, 2400));
+      const m = MEL[bar][i];
+      if (m) tone(mus, t, hz(m), 0.22, 'square', 0.08, 3000);
+    }
+    function sched() { while (mNext < actx.currentTime + 0.15) { playStep(mStep, mNext); mNext += 60 / BPM / 4; mStep++; } }
+    function startMusic() { if (!audio()) return false; mStep = 0; mNext = actx.currentTime + 0.08; mTimer = setInterval(sched, 25); return true; }
+    function stopMusic() { clearInterval(mTimer); mTimer = null; }
+    function refreshSoundButtons() {
+      $('musicBtn').textContent = '🎵 Musique : ' + (musicOn ? 'ON' : 'OFF');
+      $('soundBtn').textContent = '🔊 Sons : ' + (soundOn ? 'ON' : 'OFF');
+    }
+    $('musicBtn').addEventListener('click', () => {
+      if (musicOn) { musicOn = false; stopMusic(); } else { musicOn = startMusic(); }
+      refreshSoundButtons();
+    });
+    $('soundBtn').addEventListener('click', () => {
+      soundOn = !soundOn;
+      try { localStorage.setItem('pc_sound', soundOn ? '1' : '0'); } catch (e) {}
+      if (soundOn) whistle(false);
+      refreshSoundButtons();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (!actx) return;
+      if (document.hidden) actx.suspend(); else actx.resume();
+    });
 
     function resetKeeperAndBall() {
       keeper.style.left = '50%';
@@ -381,6 +466,7 @@
     function takeShot(zone) {
       if (locked || shot >= 5) return;
       locked = true;
+      whistle(false);
 
       const difficulty = levels[level];
       const keeperZone = Math.random() < difficulty.chance ? zone : Math.floor(Math.random() * 3);
@@ -444,6 +530,7 @@
     }
 
     function endGame() {
+      setTimeout(() => whistle(true), 300);
       $('gameOver').classList.remove('hidden');
       document.querySelectorAll('.zone').forEach(button => button.disabled = true);
 
@@ -631,6 +718,7 @@
       banner.classList.remove('hidden');
       showMessage(`Défi de ${from} : ${target}/5`, '#60a5fa');
     }
+    refreshSoundButtons();
   </script>
 </body>
 </html>
