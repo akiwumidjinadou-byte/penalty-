@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="description" content="Penalty Challenge : tire des penalties, choisis ton pays et défie tes amis.">
+  <title>Penalty Challenge — Défis par pays</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,Arial,sans-serif}
+    body{background:#070d18;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:14px}
+    .card{width:100%;max-width:430px;background:#0f172a;border:1px solid #22314f;border-radius:22px;padding:16px;text-align:center;box-shadow:0 20px 60px #0009}
+    h1{font-size:23px;margin-bottom:4px}
+    .sub{color:#9fb0cd;font-size:13px;margin-bottom:10px}
+    .countryBar{display:flex;align-items:center;justify-content:center;gap:8px;background:#16233c;border-radius:14px;padding:9px;margin-bottom:10px}
+    .flag{font-size:24px}
+    .countryName{font-weight:800}
+    .change{margin-left:auto;background:#22314f;border:0;color:#fff;border-radius:10px;padding:7px 9px;font-weight:700;cursor:pointer}
+    .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+    button.level{padding:9px 4px;border:0;border-radius:10px;background:#22314f;color:#fff;font-weight:800;font-size:13px;cursor:pointer}
+    button.level.active{background:#22c55e;color:#04220f}
+    .field{position:relative;height:310px;border-radius:18px;overflow:hidden;margin-bottom:10px;background:#125c37}
+    .sky{position:absolute;inset:0;transition:background .5s}
+    .crowd{position:absolute;top:64px;left:0;right:0;height:70px;background:repeating-linear-gradient(90deg,var(--crowd1) 0 7px,var(--crowd2) 7px 14px);opacity:.85}
+    .stadium{position:absolute;bottom:0;left:0;right:0;height:190px;background:linear-gradient(var(--grass1),var(--grass2))}
+    .lines{position:absolute;bottom:0;left:0;right:0;height:190px;background:linear-gradient(transparent 48%,#ffffff55 48%,#ffffff55 50%,transparent 50%),repeating-linear-gradient(90deg,#ffffff12 0 28px,transparent 28px 56px)}
+    .goal{position:absolute;top:24px;left:50%;transform:translateX(-50%);width:min(260px,78%);height:120px;border:6px solid #fff;border-bottom:none;border-radius:8px 8px 0 0;z-index:3}
+    .net{position:absolute;top:30px;left:50%;transform:translateX(-50%);width:min(248px,74%);height:110px;background:repeating-linear-gradient(90deg,#ffffff30 0 2px,transparent 2px 14px),repeating-linear-gradient(#ffffff30 0 2px,transparent 2px 14px);z-index:2}
+    .keeper{position:absolute;top:92px;left:50%;width:70px;height:92px;transform:translateX(-50%);transition:left .2s cubic-bezier(.2,.8,.2,1),transform .2s;z-index:4}
+    .keeper .head{width:24px;height:24px;background:#f0c27b;border-radius:50%;margin:0 auto}
+    .keeper .body{width:42px;height:44px;background:var(--kit,#e11d48);border-radius:10px;margin:-4px auto 0}
+    .keeper .arm{position:absolute;top:22px;width:16px;height:34px;background:var(--kit,#e11d48);border-radius:8px}
+    .keeper .arm.left{left:-4px;transform:rotate(18deg)}
+    .keeper .arm.right{right:-4px;transform:rotate(-18deg)}
+    .keeper .glove{position:absolute;bottom:-4px;width:18px;height:16px;background:#fff;border-radius:6px}
+    .keeper .arm.left .glove{left:-2px}
+    .keeper .arm.right .glove{right:-2px}
+    .keeper .legs{display:flex;justify-content:center;gap:8px;margin-top:-2px}
+    .keeper .leg{width:12px;height:24px;background:#111827;border-radius:5px}
+    .keeper.dive-left{transform:translateX(-50%) rotate(-22deg)}
+    .keeper.dive-right{transform:translateX(-50%) rotate(22deg)}
+    .keeper.dive-center{transform:translateX(-50%) scale(1.08)}
+    .ball{position:absolute;bottom:26px;left:50%;width:36px;height:36px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-weight:900;transform:translateX(-50%);transition:all .38s cubic-bezier(.2,.8,.2,1);z-index:5}
+    .zones{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+    button.zone{padding:14px 6px;border:0;border-radius:12px;background:#22314f;color:#fff;font-weight:800;cursor:pointer}
+    button.zone:active{transform:scale(.96)}
+    button.zone:disabled{opacity:.4;cursor:not-allowed}
+    .stats{display:flex;justify-content:space-between;gap:5px;font-size:13px;color:#bcd0ea;margin-bottom:8px}
+    .result{font-size:21px;font-weight:900;margin-bottom:8px}
+    .actions{display:grid;gap:8px}
+    .btn{padding:12px;border:0;border-radius:12px;font-weight:800;cursor:pointer;text-decoration:none;display:block;text-align:center}
+    .primary{background:#22c55e;color:#04220f}
+    .ghost{background:#22314f;color:#fff}
+    .hidden{display:none!important}
+    #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6;transition:opacity .12s}
+    #message{position:absolute;top:150px;left:50%;transform:translateX(-50%);font-size:20px;font-weight:900;text-shadow:0 2px 8px #000;opacity:0;transition:opacity .2s;z-index:7;white-space:nowrap}
+    #message.show{opacity:1}
+    .tabs{display:flex;gap:6px;margin-bottom:8px}
+    .tab{flex:1;padding:9px;border:0;border-radius:10px;background:#22314f;color:#fff;font-weight:800;cursor:pointer}
+    .tab.active{background:#3b82f6}
+    #leaderboard{background:#16233c;border-radius:14px;padding:10px;text-align:left;font-size:13px;margin-bottom:10px}
+    #leaderboard .score-row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #24324f}
+    #leaderboard .score-row:last-child{border-bottom:0}
+    #challengeBox{background:#16233c;border-radius:14px;padding:10px;margin-bottom:10px}
+    #challengeBox input{width:100%;padding:10px;border:0;border-radius:10px;background:#0b1220;color:#fff;margin-bottom:8px;text-align:center}
+    #autoInfo{font-size:12px;color:#9fb0cd;margin-top:8px}
+    .small-note{font-size:11px;color:#9fb0cd;line-height:1.4;margin-top:8px}
+    button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+    .fx{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+    .fx span{position:absolute;top:-24px;animation:fall linear infinite;opacity:.9}
+    .fx span.up{top:auto;bottom:-24px;animation-name:rise}
+    .fx span.sun{top:8px;right:12px;font-size:34px;animation:none}
+    @keyframes fall{to{transform:translateY(350px) rotate(360deg)}}
+    @keyframes rise{to{transform:translateY(-350px) rotate(30deg);opacity:0}}
+    .themeBar{display:flex;align-items:center;gap:8px;background:#16233c;border-radius:14px;padding:9px;margin-bottom:10px}
+.keeper .head{position:relative}
+    .keeper .head::after{content:var(--hat,'');position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:18px;line-height:1}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>⚽ Penalty Challenge</h1>
+    <p class="sub">Choisis un pays, un niveau et défie tes amis !</p>
+    <div id="challengeBanner" class="hidden" style="background:#7c2d12;border-radius:12px;padding:9px;margin-bottom:10px;font-weight:700;font-size:13px"></div>
+
+    <div class="countryBar">
+      <span class="flag" id="flag">🇸🇳</span>
+      <span class="countryName" id="countryName">Sénégal</span>
+      <button class="change" id="changeCountryBtn" type="button">Changer</button>
+    </div>
+
+    <div class="themeBar">
+      <span class="flag" id="themeEmoji">🏟️</span>
+      <span class="countryName">Décor : <span id="themeName">Stade</span></span>
+      <button class="change" id="changeThemeBtn" type="button">Changer</button>
+    </div>
+
+    <div class="levels" aria-label="Niveau de difficulté">
+      <button class="level active" data-level="0" type="button">Facile</button>
+      <button class="level" data-level="1" type="button">Normal</button>
+      <button class="level" data-level="2" type="button">Difficile</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="game" type="button">Jeu</button>
+      <button class="tab" data-tab="leader" type="button">Classement</button>
+      <button class="tab" data-tab="challenge" type="button">Défi</button>
+      <button class="tab" data-tab="info" type="button">Infos</button>
+    </div>
+
+    <section id="gameSection">
+      <div class="field" id="field">
+        <div class="sky" id="sky"></div>
+        <div class="crowd" id="crowd"></div>
+        <div class="fx" id="fx"></div>
+        <div class="stadium" id="stadium"></div>
+        <div class="lines"></div>
+        <div class="goal"></div>
+        <div class="net"></div>
+        <div class="keeper" id="keeper" aria-label="Gardien">
+          <div class="head"></div>
+          <div class="body"></div>
+          <div class="arm left"><div class="glove"></div></div>
+          <div class="arm right"><div class="glove"></div></div>
+          <div class="legs"><div class="leg"></div><div class="leg"></div></div>
+        </div>
+        <div class="ball" id="ball">⚽</div>
+        <div id="flash"></div>
+        <div id="message" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="stats">
+        <span>Tirs : <b id="shots">0</b>/5</span>
+        <span>Buts : <b id="goals">0</b></span>
+        <span>Record : <b id="best">0</b></span>
+      </div>
+
+      <div class="zones">
+        <button class="zone" data-zone="0" type="button">⬅️ Gauche</button>
+        <button class="zone" data-zone="1" type="button">⬆️ Centre</button>
+        <button class="zone" data-zone="2" type="button">Droite ➡️</button>
+      </div>
+
+      <div id="gameOver" class="hidden">
+        <div class="result" id="resultText"></div>
+        <div class="actions">
+          <a class="btn primary" id="shareBtn" href="#" target="_blank" rel="noopener">Partager mon score</a>
+          <button class="btn ghost" id="restartBtn" type="button">Rejouer maintenant</button>
+          <p id="autoInfo">Nouvelle partie automatique dans <b id="countdown">5</b>…</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="leaderSection" class="hidden">
+      <div id="leaderboard"></div>
+      <button class="btn ghost" id="clearBoardBtn" type="button">Effacer mon classement local</button>
+      <p class="small-note">Ce classement est enregistré uniquement sur cet appareil. Le classement mondial nécessitera une base de données, par exemple Firebase.</p>
+    </section>
+
+    <section id="challengeSection" class="hidden">
+      <div id="challengeBox">
+        <input id="friendName" placeholder="Nom de ton ami" maxlength="18" autocomplete="off">
+        <button class="btn primary" id="createChallengeBtn" type="button">Créer un défi</button>
+        <p class="sub" id="challengeResult" style="margin-top:10px" aria-live="polite"></p>
+      </div>
+      <p class="small-note">Le lien partage le score à battre. La vérification officielle des scores entre appareils nécessitera un service en ligne.</p>
+    </section>
+    <section id="infoSection" class="hidden">
+      <div style="background:#16233c;border-radius:14px;padding:12px;margin-bottom:10px;text-align:left;font-size:13px;line-height:1.5">
+        <h2 style="font-size:16px;margin:0 0 6px">Comment jouer</h2>
+        <p>1. Choisis ton pays et ton niveau.<br>2. Appuie sur Gauche, Centre ou Droite pour tirer.<br>3. Marque un maximum de buts sur 5 tirs.<br>4. Partage ton score et défie tes amis avec un lien.</p>
+        <h2 style="font-size:16px;margin:12px 0 6px">Confidentialité</h2>
+        <p>Penalty Challenge ne crée aucun compte. Ton pseudo, ton record et ton classement sont enregistrés uniquement sur ton appareil (stockage local du navigateur). Nous ne les envoyons à aucun serveur. Quand tu partages un défi, le score et le nom figurent dans le lien que tu envoies. Tu peux effacer tes données à tout moment depuis l’onglet Classement ou en vidant les données du navigateur.</p>
+        <h2 style="font-size:16px;margin:12px 0 6px">Contact</h2>
+        <p>Une question, une idée ou un bug ? Écris-nous : <a href="mailto:wahibdjinadou7@gmail.com" style="color:#60a5fa">wahibdjinadou7@gmail.com</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    'use strict';
+
+    const countries = [
+      {name:'Sénégal',flag:'🇸🇳',kit:'#00853f',grass1:'#1f7d4b',grass2:'#125c37',sky:'linear-gradient(#0b1e3a,#123a63)',crowd:['#00853f','#fdef42']},
+      {name:'Bénin',flag:'🇧🇯',kit:'#fcd116',grass1:'#1f7d4b',grass2:'#125c37',sky:'linear-gradient(#0b1e3a,#123a63)',crowd:['#008751','#fcd116','#e8112d']},
+      {name:'Côte d’Ivoire',flag:'🇨🇮',kit:'#f77f00',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#12253d,#1c4d76)',crowd:['#f77f00','#009e60']},
+      {name:'Nigeria',flag:'🇳🇬',kit:'#008751',grass1:'#207a4d',grass2:'#135a38',sky:'linear-gradient(#0a1f33,#14486f)',crowd:['#008751','#ffffff']},
+      {name:'Cameroun',flag:'🇨🇲',kit:'#007a5e',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0e2036,#1a4b71)',crowd:['#007a5e','#ce1126']},
+      {name:'Maroc',flag:'🇲🇦',kit:'#c1272d',grass1:'#1e7a4a',grass2:'#125b36',sky:'linear-gradient(#0b1e3a,#123a63)',crowd:['#c1272d','#006233']},
+      {name:'Algérie',flag:'🇩🇿',kit:'#006233',grass1:'#207a4d',grass2:'#135a38',sky:'linear-gradient(#0a1f33,#14486f)',crowd:['#006233','#ffffff']},
+      {name:'France',flag:'🇫🇷',kit:'#1d4ed8',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#1d4ed8','#ffffff']},
+      {name:'Brésil',flag:'🇧🇷',kit:'#facc15',grass1:'#1f7d4b',grass2:'#125c37',sky:'linear-gradient(#0a1f33,#14486f)',crowd:['#009c3b','#ffdf00']},
+      {name:'Ghana',flag:'🇬🇭',kit:'#ce1126',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#ce1126', '#fcd116', '#006b3f']},
+      {name:'Mali',flag:'🇲🇱',kit:'#14b53a',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#14b53a', '#fcd116', '#ce1126']},
+      {name:'Togo',flag:'🇹🇬',kit:'#006a4e',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#006a4e', '#ffce00', '#d21034']},
+      {name:'Égypte',flag:'🇪🇬',kit:'#ce1126',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#ce1126', '#ffffff', '#000000']},
+      {name:'Afrique du Sud',flag:'🇿🇦',kit:'#007a4d',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#007a4d', '#ffb612', '#de3831']},
+      {name:'Argentine',flag:'🇦🇷',kit:'#75aadb',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#75aadb', '#ffffff']},
+      {name:'Espagne',flag:'🇪🇸',kit:'#c60b1e',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#c60b1e', '#ffc400']},
+      {name:'Portugal',flag:'🇵🇹',kit:'#006600',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#006600', '#ff0000']}
+    ];
+
+    const levels = [
+      {name:'Facile',chance:0.30},
+      {name:'Normal',chance:0.42},
+      {name:'Difficile',chance:0.55}
+    ];
+
+    const STORAGE_BEST = 'pc_best';
+    const STORAGE_BOARD = 'pc_board';
+    const positions = ['20%','50%','80%'];
+
+    const $ = id => document.getElementById(id);
+    const keeper = $('keeper');
+    const ball = $('ball');
+    const flash = $('flash');
+    const message = $('message');
+    const field = $('field');
+    const sky = $('sky');
+    const crowd = $('crowd');
+    const stadium = $('stadium');
+
+    let challengeTarget = null;
+    let current = 0;
+    let level = 0;
+    let shot = 0;
+    let goals = 0;
+    let locked = false;
+    let autoTimer = null;
+    let messageTimer = null;
+    let best = readBest();
+    let board = readBoard();
+
+    function readBest() {
+      try { return Math.max(0, Number(localStorage.getItem(STORAGE_BEST)) || 0); }
+      catch (error) { return 0; }
+    }
+
+    function readBoard() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_BOARD) || '[]');
+        return Array.isArray(saved) ? saved.filter(item =>
+          item && typeof item.name === 'string' &&
+          Number.isFinite(Number(item.score)) &&
+          typeof item.country === 'string' &&
+          typeof item.level === 'string'
+        ).slice(0, 10) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveBoard() {
+      try { localStorage.setItem(STORAGE_BOARD, JSON.stringify(board)); }
+      catch (error) { showMessage('Stockage indisponible', '#fbbf24'); }
+    }
+
+    const themes = [
+      {name:'Stade',emoji:'🏟️'},
+      {name:'Plage',hat:'👒',emoji:'🏖️',sky:'linear-gradient(#38bdf8 0 40%,#0ea5e9 40% 58%,#f4d58d 58%)',g1:'#f2d38a',g2:'#d9b45f',fx:'🌊',n:0},
+      {name:'Désert',hat:'🤠',kit:'#78350f',emoji:'🏜️',sky:'linear-gradient(#fcd34d,#fb923c)',g1:'#e9b765',g2:'#c98b3a',fx:'☀️',sun:1},
+      {name:'Neige',hat:'🧢',kit:'#1e40af',emoji:'❄️',sky:'linear-gradient(#94a3b8,#e2e8f0)',g1:'#f1f5f9',g2:'#cbd5e1',fx:'❄️',n:14},
+      {name:'Été',hat:'🕶️',emoji:'☀️',sky:'linear-gradient(#38bdf8,#bae6fd)',g1:'#22c55e',g2:'#15803d',fx:'☀️',sun:1},
+      {name:'Automne',hat:'🎩',kit:'#9a3412',emoji:'🍂',sky:'linear-gradient(#f59e0b,#78350f)',g1:'#b45309',g2:'#78350f',fx:'🍂',n:12},
+      {name:'Ciel',hat:'✨',kit:'#0ea5e9',emoji:'☁️',sky:'linear-gradient(#1e3a8a,#60a5fa)',g1:'#f8fafc',g2:'#dbeafe',fx:'☁️',n:6},
+      {name:'Enfer',hat:'😈',kit:'#111827',emoji:'🔥',sky:'linear-gradient(#1c0505,#7f1d1d)',g1:'#7f1d1d',g2:'#2b0a0a',fx:'🔥',n:10,up:1}
+    ];
+    let themeIndex = 0;
+    try { themeIndex = Math.min(themes.length - 1, Math.max(0, Number(localStorage.getItem('pc_theme')) || 0)); } catch (e) {}
+
+    function applyTheme() {
+      const t = themes[themeIndex];
+      $('themeEmoji').textContent = t.emoji;
+      $('themeName').textContent = t.name;
+      const fx = $('fx');
+      fx.innerHTML = '';
+      const c = countries[current];
+      keeper.style.setProperty('--hat', `"${t.hat || ''}"`);
+      keeper.style.setProperty('--kit', t.kit || c.kit);
+      if (!t.sky) {
+        crowd.style.display = '';
+        field.style.background = `linear-gradient(${c.grass1},${c.grass2})`;
+        sky.style.background = c.sky;
+        stadium.style.background = `linear-gradient(${c.grass1},${c.grass2})`;
+        return;
+      }
+      crowd.style.display = 'none';
+      field.style.background = `linear-gradient(${t.g1},${t.g2})`;
+      sky.style.background = t.sky;
+      stadium.style.background = `linear-gradient(${t.g1},${t.g2})`;
+      if (t.sun) {
+        const sun = document.createElement('span');
+        sun.className = 'sun';
+        sun.textContent = t.fx;
+        fx.appendChild(sun);
+      }
+      for (let i = 0; i < (t.n || 0); i++) {
+        const span = document.createElement('span');
+        span.textContent = t.fx;
+        if (t.up) span.className = 'up';
+        span.style.left = (Math.random() * 95) + '%';
+        span.style.fontSize = (12 + Math.random() * 12) + 'px';
+        span.style.animationDuration = (4 + Math.random() * 5) + 's';
+        span.style.animationDelay = (-Math.random() * 8) + 's';
+        fx.appendChild(span);
+      }
+    }
+
+    function changeTheme() {
+      themeIndex = (themeIndex + 1) % themes.length;
+      try { localStorage.setItem('pc_theme', String(themeIndex)); } catch (e) {}
+      applyTheme();
+      showMessage(themes[themeIndex].emoji + ' ' + themes[themeIndex].name, '#60a5fa');
+    }
+    $('changeThemeBtn').addEventListener('click', changeTheme);
+
+    function applyCountry() {
+      const country = countries[current];
+      $('flag').textContent = country.flag;
+      $('countryName').textContent = country.name;
+      field.style.background = `linear-gradient(${country.grass1},${country.grass2})`;
+      sky.style.background = country.sky;
+      stadium.style.background = `linear-gradient(${country.grass1},${country.grass2})`;
+      crowd.style.setProperty('--crowd1', country.crowd[0]);
+      crowd.style.setProperty('--crowd2', country.crowd[1]);
+      keeper.style.setProperty('--kit', country.kit);
+      applyTheme();
+    }
+
+    function changeCountry() {
+      current = (current + 1) % countries.length;
+      applyCountry();
+      resetGame();
+      showMessage(countries[current].flag + ' ' + countries[current].name, '#60a5fa');
+    }
+
+    function showMessage(text, color) {
+      clearTimeout(messageTimer);
+      message.textContent = text;
+      message.style.color = color;
+      message.classList.add('show');
+      messageTimer = setTimeout(() => message.classList.remove('show'), 850);
+    }
+
+    function playSound(type) {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        const context = new AudioContextClass();
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        if (type === 'goal') {
+          oscillator.frequency.setValueAtTime(660, context.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(990, context.currentTime + 0.18);
+        } else {
+          oscillator.frequency.setValueAtTime(300, context.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(120, context.currentTime + 0.18);
+        }
+        gain.gain.setValueAtTime(0.12, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.25);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.25);
+        oscillator.onended = () => context.close().catch(() => {});
+      } catch (error) {}
+    }
+
+    function resetKeeperAndBall() {
+      keeper.style.left = '50%';
+      keeper.classList.remove('dive-left', 'dive-right', 'dive-center');
+      ball.style.bottom = '26px';
+      ball.style.left = '50%';
+    }
+
+    function takeShot(zone) {
+      if (locked || shot >= 5) return;
+      locked = true;
+
+      const difficulty = levels[level];
+      const keeperZone = Math.random() < difficulty.chance ? zone : Math.floor(Math.random() * 3);
+
+      keeper.style.left = positions[keeperZone];
+      keeper.classList.remove('dive-left', 'dive-right', 'dive-center');
+      if (keeperZone === 0) keeper.classList.add('dive-left');
+      else if (keeperZone === 1) keeper.classList.add('dive-center');
+      else keeper.classList.add('dive-right');
+
+      ball.style.bottom = '170px';
+      ball.style.left = positions[zone];
+
+      setTimeout(() => {
+        const scored = zone !== keeperZone;
+        if (scored) {
+          goals++;
+          flash.style.opacity = '0.7';
+          setTimeout(() => { flash.style.opacity = '0'; }, 100);
+          showMessage('BUT ! ⚽', '#22c55e');
+          playSound('goal');
+        } else {
+          showMessage('Arrêté ! 🧤', '#ef4444');
+          playSound('save');
+        }
+
+        $('goals').textContent = String(goals);
+        shot++;
+        $('shots').textContent = String(shot);
+
+        setTimeout(() => {
+          resetKeeperAndBall();
+          if (shot >= 5) {
+            locked = false;
+            endGame();
+          } else {
+            locked = false;
+          }
+        }, 650);
+      }, 380);
+    }
+
+    function saveScore() {
+      if (goals <= 0) return;
+      let name = 'Joueur';
+      try {
+        const entered = window.prompt('Ton pseudo pour le classement :', 'Joueur');
+        if (entered && entered.trim()) name = entered.trim().slice(0, 18);
+      } catch (error) {}
+      board.push({
+        name,
+        score: goals,
+        country: countries[current].flag,
+        level: levels[level].name,
+        date: Date.now()
+      });
+      board.sort((a, b) => Number(b.score) - Number(a.score) || Number(a.date) - Number(b.date));
+      board = board.slice(0, 10);
+      saveBoard();
+      renderBoard();
+    }
+
+    function endGame() {
+      $('gameOver').classList.remove('hidden');
+      document.querySelectorAll('.zone').forEach(button => button.disabled = true);
+
+      let rank;
+      if (goals >= 5) rank = 'Légende ⭐';
+      else if (goals >= 4) rank = 'Tireur d’élite 🔥';
+      else if (goals >= 3) rank = 'Bon joueur 👏';
+      else if (goals >= 1) rank = 'À améliorer 💪';
+      else rank = 'Le gardien a gagné 😅';
+
+      $('resultText').textContent = `${goals}/5 — ${rank}`;
+      if (challengeTarget !== null) {
+        $('resultText').textContent += goals > challengeTarget ? ' — Défi gagné ! 🏆' : goals === challengeTarget ? ' — Égalité 🤝' : ' — Défi perdu 😅';
+      }
+
+      if (goals > best) {
+        best = goals;
+        try { localStorage.setItem(STORAGE_BEST, String(best)); } catch (error) {}
+        $('best').textContent = String(best);
+      }
+
+      saveScore();
+      const country = countries[current];
+      const shareText = `J’ai marqué ${goals}/5 à Penalty Challenge avec ${country.flag} ${country.name} (${levels[level].name}) ! Peux-tu me battre ?`;
+      $('shareBtn').href = 'https://wa.me/?text=' + encodeURIComponent(shareText);
+      startAutoRestart();
+    }
+
+    function startAutoRestart() {
+      clearInterval(autoTimer);
+      let remaining = 5;
+      $('countdown').textContent = String(remaining);
+      autoTimer = setInterval(() => {
+        remaining--;
+        $('countdown').textContent = String(remaining);
+        if (remaining <= 0) {
+          clearInterval(autoTimer);
+          resetGame();
+        }
+      }, 1000);
+    }
+
+    function resetGame() {
+      clearInterval(autoTimer);
+      shot = 0;
+      goals = 0;
+      locked = false;
+      $('shots').textContent = '0';
+      $('goals').textContent = '0';
+      $('gameOver').classList.add('hidden');
+      document.querySelectorAll('.zone').forEach(button => button.disabled = false);
+      resetKeeperAndBall();
+    }
+
+    function renderBoard() {
+      const element = $('leaderboard');
+      element.replaceChildren();
+
+      const heading = document.createElement('b');
+      heading.textContent = 'Top 10 local';
+      element.appendChild(heading);
+
+      if (!board.length) {
+        const empty = document.createElement('p');
+        empty.className = 'sub';
+        empty.style.marginTop = '8px';
+        empty.textContent = 'Aucun score pour le moment.';
+        element.appendChild(empty);
+        return;
+      }
+
+      board.forEach((score, index) => {
+        const row = document.createElement('div');
+        row.className = 'score-row';
+
+        const player = document.createElement('span');
+        player.textContent = `${index + 1}. ${score.country} ${score.name}`;
+
+        const points = document.createElement('span');
+        points.textContent = `${score.score}/5 • ${score.level}`;
+
+        row.append(player, points);
+        element.appendChild(row);
+      });
+    }
+
+    function clearBoard() {
+      if (!window.confirm('Effacer le classement local ?')) return;
+      board = [];
+      try { localStorage.removeItem(STORAGE_BOARD); } catch (error) {}
+      renderBoard();
+    }
+
+    function createChallenge() {
+      const enteredName = $('friendName').value.trim().slice(0, 18);
+      const friendName = enteredName || 'ton ami';
+      const target = Math.max(1, goals || 3);
+      const url = new URL(window.location.href);
+      url.hash = new URLSearchParams({target: String(target), from: friendName}).toString();
+
+      const result = $('challengeResult');
+      result.replaceChildren();
+
+      const messageText = document.createElement('span');
+      messageText.textContent = `Défi créé pour ${friendName} : bats ${target}/5. `;
+      const text = `⚽ ${friendName}, bats mon score de ${target}/5 sur Penalty Challenge ! ${url.toString()}`;
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      actions.style.marginTop = '10px';
+      const wa = document.createElement('a');
+      wa.className = 'btn primary';
+      wa.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+      wa.target = '_blank';
+      wa.rel = 'noopener';
+      wa.textContent = 'Envoyer sur WhatsApp';
+      const more = document.createElement('button');
+      more.className = 'btn ghost';
+      more.type = 'button';
+      more.textContent = 'Partager (Facebook, SMS…)';
+      more.addEventListener('click', () => {
+        if (navigator.share) {
+          navigator.share({text}).catch(() => {});
+        } else {
+          window.prompt('Copie ce message :', text);
+        }
+      });
+      const copy = document.createElement('button');
+      copy.className = 'btn ghost';
+      copy.type = 'button';
+      copy.textContent = 'Copier le lien';
+      copy.addEventListener('click', () => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url.toString()).then(() => showMessage('Lien copié !', '#22c55e')).catch(() => window.prompt('Copie ce lien :', url.toString()));
+        } else {
+          window.prompt('Copie ce lien :', url.toString());
+        }
+      });
+      actions.append(wa, more, copy);
+      result.append(messageText, actions);
+    }
+
+    document.querySelectorAll('.level').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.level').forEach(item => item.classList.remove('active'));
+        button.classList.add('active');
+        level = Number(button.dataset.level);
+        resetGame();
+        showMessage('Niveau ' + levels[level].name, '#22c55e');
+      });
+    });
+
+    document.querySelectorAll('.tab').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(item => item.classList.remove('active'));
+        button.classList.add('active');
+        $('gameSection').classList.add('hidden');
+        $('leaderSection').classList.add('hidden');
+        $('challengeSection').classList.add('hidden');
+        $('infoSection').classList.add('hidden');
+        $(button.dataset.tab + 'Section').classList.remove('hidden');
+        if (button.dataset.tab === 'leader') renderBoard();
+      });
+    });
+
+    document.querySelectorAll('.zone').forEach(button => {
+      button.addEventListener('click', () => takeShot(Number(button.dataset.zone)));
+    });
+
+    $('changeCountryBtn').addEventListener('click', changeCountry);
+    $('restartBtn').addEventListener('click', resetGame);
+    $('clearBoardBtn').addEventListener('click', clearBoard);
+    $('createChallengeBtn').addEventListener('click', createChallenge);
+
+    applyCountry();
+    $('best').textContent = String(best);
+    renderBoard();
+
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    if (params.has('target')) {
+      const target = Math.min(5, Math.max(1, Number(params.get('target')) || 3));
+      const from = (params.get('from') || 'ton ami').slice(0, 18);
+      challengeTarget = target;
+      const banner = $('challengeBanner');
+      banner.textContent = `🎯 Défi de ${from} : marque au moins ${target}/5 pour le battre !`;
+      banner.classList.remove('hidden');
+      showMessage(`Défi de ${from} : ${target}/5`, '#60a5fa');
+    }
+  </script>
+</body>
+</html>
