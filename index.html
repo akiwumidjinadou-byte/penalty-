@@ -34,7 +34,7 @@
     .lines{position:absolute;bottom:0;left:0;right:0;height:190px;background:linear-gradient(transparent 48%,#ffffff55 48%,#ffffff55 50%,transparent 50%),repeating-linear-gradient(90deg,#ffffff12 0 28px,transparent 28px 56px)}
     .goal{position:absolute;top:24px;left:50%;transform:translateX(-50%);width:min(260px,78%);height:120px;border:6px solid #fff;border-bottom:none;border-radius:8px 8px 0 0;z-index:3}
     .net{position:absolute;top:30px;left:50%;transform:translateX(-50%);width:min(248px,74%);height:110px;background:repeating-linear-gradient(90deg,#ffffff30 0 2px,transparent 2px 14px),repeating-linear-gradient(#ffffff30 0 2px,transparent 2px 14px);z-index:2}
-    .keeper{position:absolute;top:92px;left:50%;width:70px;height:92px;transform:translateX(-50%);transition:left .2s cubic-bezier(.2,.8,.2,1),transform .2s;z-index:4}
+    .keeper{position:absolute;top:92px;left:50%;width:70px;height:92px;transform:translateX(-50%);transition:left .2s cubic-bezier(.2,.8,.2,1),transform .2s,top .2s;z-index:4}
     .keeper .head{width:24px;height:24px;background:#f0c27b;border-radius:50%;margin:0 auto}
     .keeper .body{width:42px;height:44px;background:var(--kit,#e11d48);border-radius:10px;margin:-4px auto 0}
     .keeper .arm{position:absolute;top:22px;width:16px;height:34px;background:var(--kit,#e11d48);border-radius:8px}
@@ -83,12 +83,20 @@
     .themeBar{display:flex;align-items:center;gap:8px;background:#16233c;border-radius:14px;padding:9px;margin-bottom:10px}
 .keeper .head{position:relative}
     .keeper .head::after{content:var(--hat,'');position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:18px;line-height:1}
+    .power{position:relative;height:18px;border-radius:9px;margin:2px 4px 6px;background:linear-gradient(90deg,#ef4444 0 30%,#facc15 30% 75%,#22c55e 75% 92%,#ef4444 92% 100%)}
+    .powerMark{position:absolute;top:-5px;bottom:-5px;width:6px;border-radius:3px;background:#fff;box-shadow:0 0 10px #fff;left:0}
+    .powerHint{font-size:12px;color:#a8b2dc;text-align:center;margin-bottom:8px}
+    button.zone{padding:11px 4px;font-size:13px}
+    .zones{grid-template-columns:repeat(3,1fr)}
+    .coinTag{color:#facc15}
   </style>
 </head>
 <body>
   <main class="card">
     <h1>⚽ Penalty Challenge</h1>
     <p class="sub">Choisis un pays, un niveau et défie tes amis !</p>
+    <button class="btn primary" id="installBtn" type="button" style="width:100%;margin-bottom:10px">📲 Installer l’app</button>
+    <div class="themeBar"><span id="netBadge" style="font-size:12px;font-weight:800"></span><button class="change" id="giftBtn" type="button">🎁 Cadeau du jour</button></div>
     <div id="challengeBanner" class="hidden" style="background:#7c2d12;border-radius:12px;padding:9px;margin-bottom:10px;font-weight:700;font-size:13px"></div>
 
     <div class="countryBar">
@@ -100,7 +108,7 @@
     <div class="themeBar">
       <span class="flag" id="themeEmoji">🏟️</span>
       <span class="countryName">Décor : <span id="themeName">Stade</span></span>
-      <button class="change" id="changeThemeBtn" type="button">Changer</button>
+      <button class="change" id="changeThemeBtn" type="button">Choisir</button>
     </div>
 
     <div class="themeBar">
@@ -145,13 +153,19 @@
       <div class="stats">
         <span>Tirs : <b id="shots">0</b>/5</span>
         <span>Buts : <b id="goals">0</b></span>
+        <span class="coinTag">🪙 <b id="coins">0</b></span>
         <span>Record : <b id="best">0</b></span>
       </div>
 
+      <div class="power" id="power"><div class="powerMark" id="powerMark"></div></div>
+      <div class="powerHint">⚡ Choisis un coin et appuie quand la barre est dans le <b style="color:#22c55e">vert</b></div>
       <div class="zones">
-        <button class="zone" data-zone="0" type="button">⬅️ Gauche</button>
-        <button class="zone" data-zone="1" type="button">⬆️ Centre</button>
-        <button class="zone" data-zone="2" type="button">Droite ➡️</button>
+        <button class="zone" data-zone="0" type="button">↖️ Haut G</button>
+        <button class="zone" data-zone="1" type="button">⬆️ Haut</button>
+        <button class="zone" data-zone="2" type="button">↗️ Haut D</button>
+        <button class="zone" data-zone="3" type="button">↙️ Bas G</button>
+        <button class="zone" data-zone="4" type="button">⬇️ Bas</button>
+        <button class="zone" data-zone="5" type="button">↘️ Bas D</button>
       </div>
 
       <div id="gameOver" class="hidden">
@@ -181,7 +195,7 @@
     <section id="infoSection" class="hidden">
       <div style="background:#16233c;border-radius:14px;padding:12px;margin-bottom:10px;text-align:left;font-size:13px;line-height:1.5">
         <h2 style="font-size:16px;margin:0 0 6px">Comment jouer</h2>
-        <p>1. Choisis ton pays et ton niveau.<br>2. Appuie sur Gauche, Centre ou Droite pour tirer.<br>3. Marque un maximum de buts sur 5 tirs.<br>4. Partage ton score et défie tes amis avec un lien.</p>
+        <p>1. Choisis ton pays et ton niveau.<br>2. Choisis un des 6 coins du but et appuie quand la barre est dans le vert : trop faible, le gardien l’arrête ; trop fort, ça part au-dessus !<br>3. Marque un maximum de buts sur 5 tirs.<br>4. Chaque but rapporte des pièces : utilise-les pour débloquer de nouveaux décors.<br>5. Partage ton score et défie tes amis avec un lien.</p>
         <h2 style="font-size:16px;margin:12px 0 6px">Confidentialité</h2>
         <p>Penalty Challenge ne crée aucun compte. Ton pseudo, ton record et ton classement sont enregistrés uniquement sur ton appareil (stockage local du navigateur). Nous ne les envoyons à aucun serveur. Quand tu partages un défi, le score et le nom figurent dans le lien que tu envoies. Tu peux effacer tes données à tout moment depuis l’onglet Classement ou en vidant les données du navigateur.</p>
         <p><b>Publicité.</b> Ce site peut afficher des publicités fournies par Monetag et Google AdSense. Ces régies et leurs partenaires peuvent utiliser des cookies ou des identifiants publicitaires pour afficher des annonces, personnalisées ou non selon tes choix et ta région. Tu peux gérer tes préférences sur <a href="https://adssettings.google.com" style="color:#60a5fa">adssettings.google.com</a>. Nous ne recevons pas tes données personnelles via ces annonces.</p>
@@ -217,8 +231,8 @@
     ];
 
     const levels = [
-      {name:'Facile',chance:0.30},
-      {name:'Normal',chance:0.42},
+      {name:'Facile',chance:0.25},
+      {name:'Normal',chance:0.40},
       {name:'Difficile',chance:0.55}
     ];
 
@@ -281,8 +295,21 @@
       {name:'Ciel',hat:'✨',kit:'#0ea5e9',emoji:'☁️',sky:'linear-gradient(#1e3a8a,#60a5fa)',g1:'#f8fafc',g2:'#dbeafe',fx:'☁️',n:6},
       {name:'Enfer',hat:'😈',kit:'#111827',emoji:'🔥',sky:'linear-gradient(#1c0505,#7f1d1d)',g1:'#7f1d1d',g2:'#2b0a0a',fx:'🔥',n:10,up:1}
     ];
+    let coins = 0, unlockedThemes = [0];
+    const THEME_PRICE = [0, 150, 250, 350, 450, 600, 800, 1000];
+    try {
+      coins = Math.max(0, Number(localStorage.getItem('pc_coins')) || 0);
+      const u = JSON.parse(localStorage.getItem('pc_unlocked') || '[0]');
+      if (Array.isArray(u)) unlockedThemes = u.filter(Number.isInteger);
+      if (!unlockedThemes.includes(0)) unlockedThemes.push(0);
+    } catch (e) {}
+    function saveCoins() {
+      try { localStorage.setItem('pc_coins', String(coins)); localStorage.setItem('pc_unlocked', JSON.stringify(unlockedThemes)); } catch (e) {}
+      const el = $('coins'); if (el) el.textContent = String(coins);
+    }
     let themeIndex = 0;
     try { themeIndex = Math.min(themes.length - 1, Math.max(0, Number(localStorage.getItem('pc_theme')) || 0)); } catch (e) {}
+    if (!unlockedThemes.includes(themeIndex)) themeIndex = 0;
 
     function applyTheme() {
       const t = themes[themeIndex];
@@ -328,7 +355,45 @@
       applyTheme();
       showMessage(themes[themeIndex].emoji + ' ' + themes[themeIndex].name, '#60a5fa');
     }
-    $('changeThemeBtn').addEventListener('click', changeTheme);
+    function openThemeShop() {
+      const o = document.createElement('div');
+      o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:999;display:flex;align-items:center;justify-content:center;padding:14px';
+      const box = document.createElement('div');
+      box.style.cssText = 'background:#16233c;border-radius:18px;padding:16px;max-width:380px;width:100%;max-height:88vh;overflow:auto';
+      const head = document.createElement('div');
+      head.innerHTML = '<h2 style="margin:0 0 4px;font-size:19px">🎨 Décors</h2><div style="font-size:13px;color:#facc15;margin-bottom:10px">Tes pièces : 🪙 <b id="shopCoins">' + coins + '</b></div>';
+      box.appendChild(head);
+      function build() {
+        box.querySelectorAll('.row').forEach(r => r.remove());
+        themes.forEach((t, i) => {
+          const ok = unlockedThemes.includes(i), r = document.createElement('div');
+          r.className = 'row';
+          r.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:11px;margin-bottom:6px;border-radius:12px;background:#22314f;font-weight:800;cursor:pointer;opacity:' + (ok ? 1 : .8) + (i === themeIndex ? ';outline:2px solid #22c55e' : '');
+          r.innerHTML = '<span>' + t.emoji + ' ' + t.name + '</span><span style="font-size:13px">' + (i === themeIndex ? '✔ Actif' : ok ? 'Choisir' : '🔒 ' + THEME_PRICE[i] + ' 🪙') + '</span>';
+          r.addEventListener('click', () => {
+            if (!ok) {
+              if (coins < THEME_PRICE[i]) { showMessage('Il te manque ' + (THEME_PRICE[i] - coins) + ' 🪙', '#facc15'); return; }
+              if (!confirm('Débloquer ' + t.name + ' pour ' + THEME_PRICE[i] + ' pièces ?')) return;
+              coins -= THEME_PRICE[i]; unlockedThemes.push(i); saveCoins();
+              const sc = $('shopCoins'); if (sc) sc.textContent = String(coins);
+            }
+            themeIndex = i;
+            try { localStorage.setItem('pc_theme', String(themeIndex)); } catch (e) {}
+            applyTheme(); o.remove();
+            showMessage(t.emoji + ' ' + t.name, '#60a5fa');
+          });
+          box.appendChild(r);
+        });
+      }
+      build();
+      const close = document.createElement('button');
+      close.className = 'btn primary'; close.type = 'button'; close.style.cssText = 'width:100%;margin-top:8px'; close.textContent = 'Fermer';
+      close.addEventListener('click', () => o.remove());
+      box.appendChild(close); o.appendChild(box);
+      o.addEventListener('click', ev => { if (ev.target === o) o.remove(); });
+      document.body.appendChild(o);
+    }
+    $('changeThemeBtn').addEventListener('click', openThemeShop);
 
     function applyCountry() {
       const country = countries[current];
@@ -464,9 +529,43 @@
 
     function resetKeeperAndBall() {
       keeper.style.left = '50%';
+      keeper.style.top = '';
       keeper.classList.remove('dive-left', 'dive-right', 'dive-center');
       ball.style.bottom = '26px';
       ball.style.left = '50%';
+    }
+
+    /* ----- jauge de puissance ----- */
+    let power = 0, pdir = 1, pLast = performance.now();
+    function powerLoop(now) {
+      const dt = Math.min(0.05, (now - pLast) / 1000); pLast = now;
+      power += pdir * dt * (70 + level * 30);
+      if (power >= 100) { power = 100; pdir = -1; }
+      if (power <= 0) { power = 0; pdir = 1; }
+      $('powerMark').style.left = 'calc(' + power + '% - ' + (power * 0.06) + 'px)';
+      requestAnimationFrame(powerLoop);
+    }
+    requestAnimationFrame(powerLoop);
+
+    /* ----- effets ----- */
+    function bigText(txt, color) {
+      const d = document.createElement('div');
+      d.textContent = txt;
+      d.style.cssText = 'position:absolute;left:0;right:0;top:34%;text-align:center;font-size:44px;font-weight:900;color:' + color + ';text-shadow:0 4px 18px #000;pointer-events:none;z-index:8';
+      field.appendChild(d);
+      d.animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1.15)', opacity: 1, offset: .3 }, { transform: 'scale(1)', opacity: 1, offset: .7 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 1100 }).onfinish = () => d.remove();
+    }
+    function confetti() {
+      const cols = ['#ffd23f', '#22c55e', '#ef4444', '#3b82f6', '#ec4899', '#ffffff'];
+      for (let i = 0; i < 34; i++) {
+        const c = document.createElement('div'), x = Math.random() * 100;
+        c.style.cssText = 'position:absolute;top:-10px;left:' + x + '%;width:8px;height:12px;background:' + cols[i % cols.length] + ';pointer-events:none;z-index:8';
+        field.appendChild(c);
+        c.animate([{ transform: 'translateY(0) rotate(0)', opacity: 1 }, { transform: 'translate(' + (Math.random() * 60 - 30) + 'px,' + (260 + Math.random() * 60) + 'px) rotate(' + (360 + Math.random() * 360) + 'deg)', opacity: .9 }], { duration: 900 + Math.random() * 600, easing: 'ease-in' }).onfinish = () => c.remove();
+      }
+    }
+    function shakeField() {
+      field.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-9px)' }, { transform: 'translateX(9px)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(0)' }], { duration: 300 });
     }
 
     function takeShot(zone) {
@@ -474,28 +573,44 @@
       locked = true;
       whistle(false);
 
+      const p = power;
+      const col = zone % 3, row = Math.floor(zone / 3);
       const difficulty = levels[level];
-      const keeperZone = Math.random() < difficulty.chance ? zone : Math.floor(Math.random() * 3);
+      const kz = Math.random() < difficulty.chance ? zone : Math.floor(Math.random() * 6);
+      const kc = kz % 3, kr = Math.floor(kz / 3);
 
-      keeper.style.left = positions[keeperZone];
+      let outcome;
+      if (p > 92) outcome = 'over';
+      else if (p < 30) outcome = 'weak';
+      else if (kz === zone) outcome = (p >= 75 && Math.random() < 0.5) ? 'power' : 'saved';
+      else outcome = 'goal';
+
+      const kcol = outcome === 'weak' ? col : kc;
+      keeper.style.left = positions[kcol];
+      keeper.style.top = (outcome === 'weak' ? row : kr) === 0 ? '66px' : '104px';
       keeper.classList.remove('dive-left', 'dive-right', 'dive-center');
-      if (keeperZone === 0) keeper.classList.add('dive-left');
-      else if (keeperZone === 1) keeper.classList.add('dive-center');
+      if (kcol === 0) keeper.classList.add('dive-left');
+      else if (kcol === 1) keeper.classList.add('dive-center');
       else keeper.classList.add('dive-right');
 
-      ball.style.bottom = '170px';
-      ball.style.left = positions[zone];
+      ball.style.bottom = outcome === 'over' ? '250px' : outcome === 'weak' ? '110px' : (row === 0 ? '205px' : '150px');
+      ball.style.left = positions[col];
 
       setTimeout(() => {
-        const scored = zone !== keeperZone;
+        const scored = outcome === 'goal' || outcome === 'power';
         if (scored) {
           goals++;
+          const gain = Math.round((10 + (p >= 75 ? 5 : 0)) * coinMult());
+          coins += gain; saveCoins();
           flash.style.opacity = '0.7';
           setTimeout(() => { flash.style.opacity = '0'; }, 100);
-          showMessage('BUT ! ⚽', '#22c55e');
+          bigText(outcome === 'power' ? 'TIR PUISSANT !' : 'GOOOAL !', '#22c55e');
+          confetti();
+          showMessage('+' + gain + ' 🪙', '#facc15');
           playSound('goal');
         } else {
-          showMessage('Arrêté ! 🧤', '#ef4444');
+          shakeField();
+          showMessage(outcome === 'over' ? 'Au-dessus ! 😬' : outcome === 'weak' ? 'Trop mou… 🐌' : 'Arrêté ! 🧤', '#ef4444');
           playSound('save');
         }
 
@@ -547,7 +662,8 @@
       else if (goals >= 1) rank = 'À améliorer 💪';
       else rank = 'Le gardien a gagné 😅';
 
-      $('resultText').textContent = `${goals}/5 — ${rank}`;
+      if (goals >= 5) { coins += Math.round(25 * coinMult()); saveCoins(); }
+      $('resultText').textContent = `${goals}/5 — ${rank}` + (goals >= 5 ? ' (+25 🪙 bonus)' : '');
       if (challengeTarget !== null) {
         $('resultText').textContent += goals > challengeTarget ? ' — Défi gagné ! 🏆' : goals === challengeTarget ? ' — Égalité 🤝' : ' — Défi perdu 😅';
       }
@@ -725,6 +841,78 @@
       showMessage(`Défi de ${from} : ${target}/5`, '#60a5fa');
     }
     refreshSoundButtons();
+    saveCoins();
+    function installHelp(){
+  const ua=navigator.userAgent,inApp=/TikTok|musical_ly|Instagram|FBAN|FBAV|Snapchat|Line\//i.test(ua),ios=/iPhone|iPad|iPod/i.test(ua);
+  if(inApp)return 'Tu es dans le navigateur de TikTok, Instagram ou Facebook : l’installation n’y est pas possible.<br><br>1. Appuie sur <b>⋯</b> ou <b>⋮</b> en haut ou en bas de l’écran.<br>2. Choisis <b>« Ouvrir dans le navigateur »</b> (Chrome ou Safari).<br>3. Reviens ici et appuie sur <b>📲 Installer l’app</b>.';
+  if(ios)return 'Sur iPhone, ouvre ce lien dans <b>Safari</b>.<br><br>1. Appuie sur le bouton <b>Partager</b> (le carré avec une flèche ⬆️).<br>2. Choisis <b>« Sur l’écran d’accueil »</b>.<br>3. Appuie sur <b>Ajouter</b>.';
+  return '1. Appuie sur le menu <b>⋮</b> de Chrome, en haut à droite.<br>2. Choisis <b>« Installer l’application »</b> ou <b>« Ajouter à l’écran d’accueil »</b>.<br>3. Confirme avec <b>Installer</b>.';
+}
+const isStandalone=()=>(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+
+    let deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
+    window.addEventListener('appinstalled', () => { $('installBtn').style.display = 'none'; });
+    if (isStandalone()) $('installBtn').style.display = 'none';
+    $('installBtn').addEventListener('click', () => {
+      if (deferredInstall) { deferredInstall.prompt(); deferredInstall.userChoice.finally(() => { deferredInstall = null; }); return; }
+      const o = document.createElement('div');
+      o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:flex;align-items:center;justify-content:center;padding:18px';
+      o.innerHTML = '<div style="background:#16233c;border-radius:18px;padding:18px;max-width:380px;width:100%;line-height:1.5;font-size:15px"><h2 style="margin:0 0 10px;font-size:19px">📲 Installer l’app</h2>' + installHelp() + '<button class="btn primary" style="width:100%;margin-top:14px" type="button">OK</button></div>';
+      o.addEventListener('click', ev => { if (ev.target === o || ev.target.tagName === 'BUTTON') o.remove(); });
+      document.body.appendChild(o);
+    });
+
+    /* ===== Bonus connexion et cadeau du jour (en ligne seulement) ===== */
+    const PFX = 'pc';
+    const NET_BONUS = 1.5;
+    function isOnline() { return navigator.onLine !== false; }
+    function coinMult() { return isOnline() ? NET_BONUS : 1; }
+    let gift = {};
+    try { gift = JSON.parse(localStorage.getItem(PFX + '_gift') || '{}') || {}; } catch (e) { gift = {}; }
+    function saveGift() { try { localStorage.setItem(PFX + '_gift', JSON.stringify(gift)); } catch (e) {} }
+    async function serverDay() {
+      const r = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+      const d = r.headers.get('date');
+      if (!d) throw new Error('no date');
+      return new Date(d).toISOString().slice(0, 10);
+    }
+    function dayBefore(day) { const t = new Date(day + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - 1); return t.toISOString().slice(0, 10); }
+    function giftAmount(n) { return Math.min(150, 50 + 25 * (n - 1)); }
+    function updateNet() {
+      const el = document.getElementById('netBadge');
+      if (el) el.textContent = isOnline() ? '🌐 En ligne : pièces +50 %' : '📴 Hors ligne : pièces normales';
+    }
+    function setGiftUI(state, amt) {
+      const b = document.getElementById('giftBtn');
+      if (!b) return;
+      b.style.boxShadow = '';
+      if (state === 'ready') { b.textContent = '🎁 Cadeau prêt : +' + amt + ' 🪙'; b.style.boxShadow = '0 0 14px #facc15'; }
+      else if (state === 'done') b.textContent = '🎁 Reviens demain';
+      else b.textContent = '🎁 Cadeau (connexion requise)';
+    }
+    async function checkGift(claim) {
+      if (!isOnline()) { setGiftUI('offline'); if (claim) giftToast('Connecte-toi à internet pour réclamer ton cadeau 🌐'); return; }
+      try {
+        const day = await serverDay();
+        if (gift.day === day) { setGiftUI('done'); if (claim) giftToast('Déjà réclamé aujourd’hui. Reviens demain ! Série : ' + (gift.streak || 1) + ' jour(s)'); return; }
+        const next = gift.day === dayBefore(day) ? (gift.streak || 0) + 1 : 1;
+        const amt = giftAmount(next);
+        if (!claim) { setGiftUI('ready', amt); return; }
+        gift = { day: day, streak: next }; saveGift();
+        addGiftCoins(amt); setGiftUI('done');
+        giftToast('🎁 +' + amt + ' 🪙 — série de ' + next + ' jour(s) !');
+      } catch (e) { setGiftUI('offline'); if (claim) giftToast('Impossible de vérifier la date. Réessaie en ligne.'); }
+    }
+    document.getElementById('giftBtn').addEventListener('click', () => checkGift(true));
+    window.addEventListener('online', () => { updateNet(); checkGift(false); });
+    window.addEventListener('offline', () => { updateNet(); setGiftUI('offline'); });
+    updateNet(); checkGift(false);
+    function giftToast(t) { showMessage(t, '#facc15'); }
+    function addGiftCoins(a) { coins += a; saveCoins(); }
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
   </script>
 </body>
 </html>
