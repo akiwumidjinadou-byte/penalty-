@@ -96,6 +96,7 @@
     <h1>⚽ Penalty Challenge</h1>
     <p class="sub">Choisis un pays, un niveau et défie tes amis !</p>
     <button class="btn primary" id="installBtn" type="button" style="width:100%;margin-bottom:10px">📲 Installer l’app</button>
+    <div class="themeBar"><button class="change" id="badgesBtn" type="button" style="margin-left:0">🏅 Badges et amis</button><button class="change" id="inviteBtn" type="button">📤 Inviter</button></div>
     <div class="themeBar"><span id="netBadge" style="font-size:12px;font-weight:800"></span><button class="change" id="giftBtn" type="button">🎁 Cadeau du jour</button></div>
     <div id="challengeBanner" class="hidden" style="background:#7c2d12;border-radius:12px;padding:9px;margin-bottom:10px;font-weight:700;font-size:13px"></div>
 
@@ -199,6 +200,7 @@
         <h2 style="font-size:16px;margin:12px 0 6px">Confidentialité</h2>
         <p>Penalty Challenge ne crée aucun compte. Ton pseudo, ton record et ton classement sont enregistrés uniquement sur ton appareil (stockage local du navigateur). Nous ne les envoyons à aucun serveur. Quand tu partages un défi, le score et le nom figurent dans le lien que tu envoies. Tu peux effacer tes données à tout moment depuis l’onglet Classement ou en vidant les données du navigateur.</p>
         <p><b>Publicité.</b> Ce site peut afficher des publicités fournies par Monetag et Google AdSense. Ces régies et leurs partenaires peuvent utiliser des cookies ou des identifiants publicitaires pour afficher des annonces, personnalisées ou non selon tes choix et ta région. Tu peux gérer tes préférences sur <a href="https://adssettings.google.com" style="color:#60a5fa">adssettings.google.com</a>. Nous ne recevons pas tes données personnelles via ces annonces.</p>
+        <p><b>Invitations.</b> Si tu invites des amis, un identifiant anonyme (sans nom ni e-mail) est enregistré sur notre serveur pour compter les invitations. Elles ne sont comptées que lorsque tu es connecté à internet.</p>
         <h2 style="font-size:16px;margin:12px 0 6px">Contact</h2>
         <p>Une question, une idée ou un bug ? Écris-nous : <a href="mailto:wahibdjinadou7@gmail.com" style="color:#60a5fa">wahibdjinadou7@gmail.com</a></p>
       </div>
@@ -651,6 +653,7 @@
     }
 
     function endGame() {
+      onGameFinished();
       setTimeout(() => whistle(true), 300);
       $('gameOver').classList.remove('hidden');
       document.querySelectorAll('.zone').forEach(button => button.disabled = true);
@@ -677,7 +680,8 @@
       saveScore();
       const country = countries[current];
       const shareText = `J’ai marqué ${goals}/5 à Penalty Challenge avec ${country.flag} ${country.name} (${levels[level].name}) ! Peux-tu me battre ?`;
-      $('shareBtn').href = 'https://wa.me/?text=' + encodeURIComponent(shareText);
+      $('shareBtn').href = 'https://wa.me/?text=' + encodeURIComponent(shareText + ' ' + myLink());
+      if (!window.__shareHook) { window.__shareHook = true; $('shareBtn').addEventListener('click', registerShare); }
       startAutoRestart();
     }
 
@@ -751,6 +755,8 @@
       const friendName = enteredName || 'ton ami';
       const target = Math.max(1, goals || 3);
       const url = new URL(window.location.href);
+      url.search = '';
+      url.searchParams.set('ref', pid);
       url.hash = new URLSearchParams({target: String(target), from: friendName}).toString();
 
       const result = $('challengeResult');
@@ -768,11 +774,13 @@
       wa.target = '_blank';
       wa.rel = 'noopener';
       wa.textContent = 'Envoyer sur WhatsApp';
+      wa.addEventListener('click', registerShare);
       const more = document.createElement('button');
       more.className = 'btn ghost';
       more.type = 'button';
       more.textContent = 'Partager (Facebook, SMS…)';
       more.addEventListener('click', () => {
+        registerShare();
         if (navigator.share) {
           navigator.share({text}).catch(() => {});
         } else {
@@ -784,6 +792,7 @@
       copy.type = 'button';
       copy.textContent = 'Copier le lien';
       copy.addEventListener('click', () => {
+        registerShare();
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(url.toString()).then(() => showMessage('Lien copié !', '#22c55e')).catch(() => window.prompt('Copie ce lien :', url.toString()));
         } else {
@@ -910,6 +919,108 @@ const isStandalone=()=>(window.matchMedia&&window.matchMedia('(display-mode: sta
     updateNet(); checkGift(false);
     function giftToast(t) { showMessage(t, '#facc15'); }
     function addGiftCoins(a) { coins += a; saveCoins(); }
+
+/* ===== Parrainage et badges ===== */
+const GAME_NAME = 'Penalty Challenge';
+const BTN_P = 'btn primary', BTN_G = 'btn ghost';
+const FRIEND_TIERS = [[1,'Bronze',50,'circle','#cd7f32'],[5,'Argent',150,'shield','#c0c8d8'],[10,'Or',300,'star','#ffd23f'],[25,'Diamant',600,'diamond','#4fe3ff'],[50,'Couronne',1200,'crown','#b57bff'],[100,'Légende',2500,'trophy','#ff6b6b']];
+const SHARE_TIERS = [[1,'Premier partage',20,'circle','#7ee787'],[5,'Messager',50,'shield','#58d68d'],[10,'Relais',100,'star','#2ecc71'],[25,'Influenceur',200,'diamond','#1abc9c'],[50,'Star',400,'crown','#16a085']];
+function lsGet(k, d) { try { const v = localStorage.getItem(PFX + '_' + k); return v === null ? d : v; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(PFX + '_' + k, String(v)); } catch (e) {} }
+let pid = lsGet('pid', '');
+if (!/^[A-Z0-9]{8,12}$/.test(pid)) {
+  const al = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', rr = crypto.getRandomValues(new Uint8Array(10));
+  pid = ''; rr.forEach(x => { pid += al[x % al.length]; }); lsSet('pid', pid);
+}
+try {
+  const r = (new URLSearchParams(location.search).get('ref') || '').toUpperCase();
+  if (/^[A-Z0-9]{8,12}$/.test(r) && r !== pid && !lsGet('ref', '')) lsSet('ref', r);
+} catch (e) {}
+function myLink() { return location.origin + '/?ref=' + pid; }
+let shares = Number(lsGet('shares', 0)) || 0, friends = Number(lsGet('friends', 0)) || 0;
+let claimed = { f: [], s: [] };
+try { claimed = JSON.parse(lsGet('claimed', '{"f":[],"s":[]}')) || claimed; } catch (e) {}
+function badgeSvg(shape, color, label, locked) {
+  const c = locked ? '#3a4560' : color;
+  const sh = {
+    circle: '<circle cx="24" cy="24" r="19" fill="' + c + '"/>',
+    shield: '<path d="M24 4 41 10V24C41 34 33 42 24 45 15 42 7 34 7 24V10Z" fill="' + c + '"/>',
+    star: '<polygon points="24,4 29.5,17.5 44,18.5 33,28 36.5,42.5 24,34.5 11.5,42.5 15,28 4,18.5 18.5,17.5" fill="' + c + '"/>',
+    diamond: '<polygon points="24,3 43,20 24,45 5,20" fill="' + c + '"/>',
+    crown: '<path d="M6 38 9 14 18 24 24 9 30 24 39 14 42 38Z" fill="' + c + '"/>',
+    trophy: '<path d="M14 6H34V20C34 27 29 31 24 31 19 31 14 27 14 20Z M21 31H27V38H21Z M15 38H33V43H15Z" fill="' + c + '"/>'
+  }[shape];
+  return '<svg viewBox="0 0 48 48" width="54" height="54">' + sh + '<text x="24" y="' + (shape === 'crown' ? '33' : '26') + '" text-anchor="middle" font-size="13" font-weight="900" fill="' + (locked ? '#7b87a6' : '#0009') + '">' + label + '</text></svg>';
+}
+function checkBadges() {
+  let changed = false;
+  FRIEND_TIERS.forEach((t, i) => { if (friends >= t[0] && !claimed.f.includes(i)) { claimed.f.push(i); changed = true; addGiftCoins(t[2]); giftToast('🏅 Badge ' + t[1] + ' ! +' + t[2] + ' 🪙'); } });
+  SHARE_TIERS.forEach((t, i) => { if (shares >= t[0] && !claimed.s.includes(i)) { claimed.s.push(i); changed = true; addGiftCoins(t[2]); giftToast('🏅 Badge ' + t[1] + ' ! +' + t[2] + ' 🪙'); } });
+  if (changed) lsSet('claimed', JSON.stringify(claimed));
+}
+function registerShare() {
+  const now = Date.now();
+  if (now - (Number(lsGet('lastshare', 0)) || 0) < 30000) return;
+  lsSet('lastshare', now); shares++; lsSet('shares', shares); checkBadges(); renderBadges();
+}
+function inviteText() { return '🎮 Viens jouer à ' + GAME_NAME + ' ! Bats mon score : ' + myLink(); }
+function doInvite() {
+  if (navigator.share) { navigator.share({ text: inviteText() }).then(registerShare).catch(() => {}); }
+  else { window.open('https://wa.me/?text=' + encodeURIComponent(inviteText()), '_blank', 'noopener'); registerShare(); }
+}
+async function refreshFriends() {
+  if (!isOnline()) return;
+  try {
+    const r = await fetch('/api/me?pid=' + pid, { cache: 'no-store' });
+    if (!r.ok) return;
+    const j = await r.json();
+    if (typeof j.count === 'number') { friends = Math.max(friends, j.count); lsSet('friends', friends); checkBadges(); renderBadges(); }
+  } catch (e) {}
+}
+function joinIfNeeded() {
+  const ref = lsGet('ref', '');
+  if (!ref || lsGet('joined', '') || !lsGet('played', '') || !isOnline()) return;
+  fetch('/api/join', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: pid, ref: ref }) })
+    .then(r => r.json()).then(j => { if (j && (j.ok || ['already', 'invalid', 'limit'].includes(j.reason))) lsSet('joined', '1'); }).catch(() => {});
+}
+function onGameFinished() { lsSet('played', '1'); joinIfNeeded(); refreshFriends(); }
+window.addEventListener('online', () => { joinIfNeeded(); refreshFriends(); });
+let badgeOverlay = null;
+function renderBadges() {
+  if (!badgeOverlay) return;
+  const grid = (tiers, val, unit) => '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + tiers.map(t => {
+    const ok = val >= t[0];
+    return '<div style="text-align:center;padding:8px 2px;border-radius:12px;background:#22314f;opacity:' + (ok ? 1 : 0.6) + '">' + badgeSvg(t[3], t[4], t[0], !ok) + '<div style="font-size:11px;font-weight:800">' + t[1] + '</div><div style="font-size:10px;color:#a8b2dc">' + (ok ? '✔ +' + t[2] + ' 🪙' : t[0] + ' ' + unit) + '</div></div>';
+  }).join('') + '</div>';
+  badgeOverlay.querySelector('.bd').innerHTML =
+    '<div style="font-size:14px;margin-bottom:10px;line-height:1.6">👥 Amis invités : <b>' + friends + '</b><br>📤 Partages : <b>' + shares + '</b></div>' +
+    '<div style="background:#22314f;border-radius:12px;padding:10px;margin-bottom:12px;font-size:12px;word-break:break-all">' + myLink() + '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:14px"><button id="bdInvite" class="' + BTN_P + '" type="button" style="flex:1">📤 Inviter</button><button id="bdCopy" class="' + BTN_G + '" type="button" style="flex:1">Copier</button></div>' +
+    '<div style="font-weight:900;margin-bottom:6px">👥 Ambassadeur</div>' + grid(FRIEND_TIERS, friends, 'amis') +
+    '<div style="font-weight:900;margin:14px 0 6px">📤 Partageur</div>' + grid(SHARE_TIERS, shares, 'partages') +
+    '<div style="font-size:11px;color:#a8b2dc;margin-top:12px;line-height:1.4">Un ami compte quand il joue sa première partie avec ton lien. Pour voir tes amis, il faut être connecté à internet.</div>';
+  badgeOverlay.querySelector('#bdInvite').onclick = doInvite;
+  badgeOverlay.querySelector('#bdCopy').onclick = () => {
+    const t = myLink();
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => giftToast('Lien copié !')).catch(() => window.prompt('Copie ton lien :', t));
+    else window.prompt('Copie ton lien :', t);
+    registerShare();
+  };
+}
+function openBadges() {
+  if (badgeOverlay) return;
+  const o = document.createElement('div');
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px';
+  o.innerHTML = '<div style="background:#16233c;color:#eef2ff;border-radius:18px;padding:16px;max-width:380px;width:100%;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="margin:0;font-size:20px">🏅 Badges et amis</h2><button id="bdX" class="' + BTN_G + ' small" type="button">✕</button></div><div class="bd"></div></div>';
+  document.body.appendChild(o); badgeOverlay = o;
+  const close = () => { o.remove(); badgeOverlay = null; };
+  o.addEventListener('click', e => { if (e.target === o) close(); });
+  o.querySelector('#bdX').onclick = close;
+  renderBadges(); refreshFriends();
+}
+document.getElementById('badgesBtn').addEventListener('click', openBadges);
+const _ib = document.getElementById('inviteBtn'); if (_ib) _ib.addEventListener('click', doInvite);
+checkBadges(); joinIfNeeded(); refreshFriends();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
     }
