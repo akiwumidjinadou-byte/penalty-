@@ -31,7 +31,7 @@ function weekRange() {
   const a = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day) - WAT; // lundi 00 h (Bénin)
   return [a, a + 6 * 86400000 + 14 * 3600000, a + 7 * 86400000]; // début, fin du concours (dimanche 14 h), fin de semaine
 }
-const CAPS = { penalty: 5, cosmic: 1000000, enquete: 1 };
+const CAPS = { penalty: 15, cosmic: 1000000, enquete: 1 };
 const METRIC = { penalty: 'total', cosmic: 'best', enquete: 'total' };
 const iso = t => new Date(t + WAT).toISOString().slice(0, 10);
 export default {
@@ -49,6 +49,10 @@ export default {
           return json({ count: 0 });
         }
         return json({ count: row.count });
+      }
+      if (url.pathname === '/api/time' && req.method === 'GET') {
+        const dl = weekRange()[1];
+        return json({ deadline: dl, now: Date.now(), closed: Date.now() >= dl });
       }
       if (url.pathname === '/api/join' && req.method === 'POST') {
         let b;

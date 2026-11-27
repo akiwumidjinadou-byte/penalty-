@@ -98,6 +98,7 @@
     <button class="btn primary" id="installBtn" type="button" style="width:100%;margin-bottom:10px">📲 Installer l’app</button>
     <div class="themeBar"><button class="change" id="badgesBtn" type="button" style="margin-left:0">🏅 Badges et amis</button><button class="change" id="inviteBtn" type="button">📤 Inviter</button></div>
     <div class="themeBar"><span id="netBadge" style="font-size:12px;font-weight:800"></span><button class="change" id="giftBtn" type="button">🎁 Cadeau du jour</button></div>
+    <div id="ctMain" style="text-align:center;font-weight:800;font-size:13px;margin:-4px 0 10px;color:#facc15"></div>
     <div id="challengeBanner" class="hidden" style="background:#7c2d12;border-radius:12px;padding:9px;margin-bottom:10px;font-weight:700;font-size:13px"></div>
 
     <div class="countryBar">
@@ -654,7 +655,7 @@
 
     function endGame() {
       onGameFinished();
-      submitScore(goals);
+      submitScore(goals * (level + 1));
       setTimeout(() => whistle(true), 300);
       $('gameOver').classList.remove('hidden');
       document.querySelectorAll('.zone').forEach(button => button.disabled = true);
@@ -992,22 +993,23 @@ function submitScore(v) {
   fetch('/api/score', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: pid, game: 'penalty', value: Math.floor(v) }) }).catch(() => {});
 }
 async function loadContest() {
-  const o = badgeOverlay; if (!o || !isOnline()) return;
+  const o = badgeOverlay; if (!o) return;
   const box = o.querySelector('#ct'); if (!box) return;
+  if (!isOnline()) { box.innerHTML = '<div style="margin-top:14px;font-size:13px">📴 Connecte-toi à internet pour voir le classement de la semaine et choisir ton pseudo.</div>'; return; }
   try {
     const rs = await Promise.all([fetch('/api/board?pid=' + pid, { cache: 'no-store' }), fetch('/contest.json?d=' + Date.now(), { cache: 'no-store' }), fetch('/api/scores?game=penalty&pid=' + pid, { cache: 'no-store' })]);
     const b = rs[0].ok ? await rs[0].json() : null;
     let c = {}; try { c = rs[1].ok ? await rs[1].json() : {}; } catch (e) {}
     let sc = null; try { sc = rs[2] && rs[2].ok ? await rs[2].json() : null; } catch (e) {}
-    if (!b) { box.innerHTML = ''; return; }
+    if (!b) { box.innerHTML = '<div style="margin-top:14px;font-size:13px">⚠️ Classement indisponible pour le moment (le serveur ne répond pas).</div>'; return; }
     const nm = x => String(x).replace(/[&<>"]/g, '');
     box.innerHTML = '<div style="font-weight:900;margin:16px 0 6px">🏆 Concours de la semaine</div>' +
       '<div style="font-size:12px;opacity:.85;margin-bottom:4px">Du lundi ' + b.start + ' au dimanche ' + b.end + ' à 14 h (heure du Bénin) · Prix : ' + nm(c.prize || 'annoncé bientôt') + '</div><div id="ctd" style="font-size:14px;font-weight:900;margin-bottom:8px"></div>' +
       (b.top.length ? '<ol style="margin:0 0 8px 18px;padding:0;font-size:14px">' + b.top.map(t => '<li>' + nm(t.name) + ' · <b>' + t.n + '</b> ami' + (t.n > 1 ? 's' : '') + '</li>').join('') + '</ol>' : '<div style="font-size:13px;opacity:.85;margin-bottom:6px">Personne n’est encore classé : invite un ami pour ouvrir le classement.</div>') +
       '<div style="font-size:13px;margin-bottom:8px">Toi : <b>' + b.me.n + '</b> ami' + (b.me.n > 1 ? 's' : '') + ' cette semaine' + (b.me.n > 0 ? ' · rang <b>' + b.me.rank + '</b>' : '') + '</div>' +
-      '<div style="font-weight:900;margin:12px 0 6px">🎯 Meilleurs buteurs de la semaine</div>' + (sc && sc.top.length ? '<ol style="margin:0 0 8px 18px;padding:0;font-size:14px">' + sc.top.map(t => '<li>' + nm(t.name) + ' · <b>' + t.v + '</b> but(s)</li>').join('') + '</ol><div style="font-size:13px;margin-bottom:8px">Toi : <b>' + sc.me.v + '</b> · ' + (sc.me.v > 0 ? 'rang <b>' + sc.me.rank + '</b>' : 'pas encore classé') + '</div>' : '<div style="font-size:13px;opacity:.85;margin-bottom:8px">Aucun score cette semaine : sois le premier !</div>') + '<input id="ctn" maxlength="14" placeholder="Ton pseudo public (3 à 14 caractères)" value="' + nm(b.myname || '') + '" style="width:100%;padding:10px;border-radius:8px;border:1px solid #8886;background:transparent;color:inherit;margin-bottom:6px;box-sizing:border-box">' +
+      '<div style="font-weight:900;margin:12px 0 6px">🎯 Meilleurs buteurs de la semaine</div>' + (sc && sc.top.length ? '<ol style="margin:0 0 8px 18px;padding:0;font-size:14px">' + sc.top.map(t => '<li>' + nm(t.name) + ' · <b>' + t.v + '</b> pt(s)</li>').join('') + '</ol><div style="font-size:13px;margin-bottom:8px">Toi : <b>' + sc.me.v + '</b> · ' + (sc.me.v > 0 ? 'rang <b>' + sc.me.rank + '</b>' : 'pas encore classé') + '</div>' : '<div style="font-size:13px;opacity:.85;margin-bottom:8px">Aucun score cette semaine : sois le premier !</div>') + '<input id="ctn" maxlength="14" placeholder="Ton pseudo public (3 à 14 caractères)" value="' + nm(b.myname || '') + '" style="width:100%;padding:10px;border-radius:8px;border:1px solid #8886;background:transparent;color:inherit;margin-bottom:6px;box-sizing:border-box">' +
       '<button id="cts" class="btn primary" type="button">Enregistrer mon pseudo</button>' +
-      '<details style="font-size:12px;margin-top:8px"><summary>Règles du concours</summary><p>1. Un ami compte quand il termine sa première partie en ligne avec ton lien.<br>2. Le concours va du lundi 00 h au dimanche 14 h (heure du Bénin). Après, plus aucun score ni invitation n’est compté et le classement est figé. Il repart à zéro le lundi.<br>3. Égalité : le premier à avoir atteint le score est classé devant. En cas d’égalité parfaite, une manche décisive ou un tirage au sort est organisé dans le groupe WhatsApp.<br>4. Les faux comptes sont retirés du classement.<br>5. Le prix est annoncé par l’organisateur et peut changer : aucune somme n’est garantie.<br>6. Participation gratuite, sans obligation d’achat. Ton pseudo est visible par tous les joueurs.</p></details>';
+      '<details style="font-size:12px;margin-top:8px"><summary>Règles du concours</summary><p>1. Un ami compte quand il termine sa première partie en ligne avec ton lien.<br>• Penalty : chaque but vaut 1 point en Facile, 2 en Normal et 3 en Difficile. Le niveau est enregistré avec ton score.<br>2. Le concours va du lundi 00 h au dimanche 14 h (heure du Bénin). Après, plus aucun score ni invitation n’est compté et le classement est figé. Il repart à zéro le lundi.<br>3. Égalité : le premier à avoir atteint le score est classé devant. En cas d’égalité parfaite, une manche décisive ou un tirage au sort est organisé dans le groupe WhatsApp.<br>4. Les faux comptes sont retirés du classement.<br>5. Le prix est annoncé par l’organisateur et peut changer : aucune somme n’est garantie.<br>6. Participation gratuite, sans obligation d’achat. Ton pseudo est visible par tous les joueurs.</p></details>';
     const off = b.now - Date.now();
     const fmt = ms => { const m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60); return (d ? d + ' j ' : '') + h + ' h ' + (m % 60) + ' min'; };
     const tick = () => { const el = box.querySelector('#ctd'); if (!el) { clearInterval(box._t); return; } const ms = b.deadline - (Date.now() + off); el.textContent = ms > 0 ? '⏳ Fin du concours dans ' + fmt(ms) : '🏁 Concours terminé : le classement final est figé.'; };
@@ -1020,8 +1022,29 @@ async function loadContest() {
         this.textContent = j.ok ? '✅ Enregistré' : 'Pseudo refusé (lettres, chiffres, espace, - _ .)';
       } catch (e) { this.textContent = 'Erreur, réessaie'; }
     };
+  } catch (e) { box.innerHTML = '<div style="margin-top:14px;font-size:13px">⚠️ Classement indisponible pour le moment (le serveur ne répond pas).</div>'; }
+}
+
+let mainOff = 0, mainDl = 0;
+function fmtLeft(ms) { const m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60); return (d ? d + ' j ' : '') + h + ' h ' + (m % 60) + ' min'; }
+function paintMain() {
+  const el = document.getElementById('ctMain'); if (!el) return;
+  if (!mainDl || !isOnline()) { el.textContent = ''; return; }
+  const ms = mainDl - (Date.now() + mainOff);
+  el.textContent = ms > 0 ? '🏆 Concours : fin dans ' + fmtLeft(ms) : '🏁 Concours terminé : classement figé';
+}
+async function mainTimer() {
+  if (!isOnline()) { paintMain(); return; }
+  try {
+    const r = await fetch('/api/time', { cache: 'no-store' });
+    if (!r.ok) return;
+    const j = await r.json();
+    mainOff = j.now - Date.now(); mainDl = j.deadline; paintMain();
   } catch (e) {}
 }
+setInterval(paintMain, 30000);
+window.addEventListener('online', mainTimer);
+window.addEventListener('offline', paintMain);
 let badgeOverlay = null;
 function renderBadges() {
   if (!badgeOverlay) return;
@@ -1057,7 +1080,7 @@ function openBadges() {
 }
 document.getElementById('badgesBtn').addEventListener('click', openBadges);
 const _ib = document.getElementById('inviteBtn'); if (_ib) _ib.addEventListener('click', doInvite);
-checkBadges(); joinIfNeeded(); refreshFriends();
+checkBadges(); joinIfNeeded(); refreshFriends(); mainTimer();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
     }
