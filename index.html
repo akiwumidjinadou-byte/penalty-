@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="description" content="Penalty Challenge : tire des penalties, choisis ton pays et défie tes amis.">
+  <title>Penalty Challenge — Défis par pays</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="monetag" content="2380f757a04e86de49d090a45b29da55">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8416105412735451"
+     crossorigin="anonymous"></script>
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,Arial,sans-serif}
+    body{background:#070d18;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:14px}
+    .card{width:100%;max-width:430px;background:#0f172a;border:1px solid #22314f;border-radius:22px;padding:16px;text-align:center;box-shadow:0 20px 60px #0009}
+    h1{font-size:23px;margin-bottom:4px}
+    .sub{color:#9fb0cd;font-size:13px;margin-bottom:10px}
+    .countryBar{display:flex;align-items:center;justify-content:center;gap:8px;background:#16233c;border-radius:14px;padding:9px;margin-bottom:10px}
+    .flag{font-size:24px}
+    .countryName{font-weight:800}
+    .change{margin-left:auto;background:#22314f;border:0;color:#fff;border-radius:10px;padding:7px 9px;font-weight:700;cursor:pointer}
+    .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+    button.level{padding:9px 4px;border:0;border-radius:10px;background:#22314f;color:#fff;font-weight:800;font-size:13px;cursor:pointer}
+    button.level.active{background:#22c55e;color:#04220f}
+    .field{position:relative;height:310px;border-radius:18px;overflow:hidden;margin-bottom:10px;background:#125c37}
+    .sky{position:absolute;inset:0;transition:background .5s}
+    .crowd{position:absolute;top:64px;left:0;right:0;height:70px;background:repeating-linear-gradient(90deg,var(--crowd1) 0 7px,var(--crowd2) 7px 14px);opacity:.85}
+    .stadium{position:absolute;bottom:0;left:0;right:0;height:190px;background:linear-gradient(var(--grass1),var(--grass2))}
+    .lines{position:absolute;bottom:0;left:0;right:0;height:190px;background:linear-gradient(transparent 48%,#ffffff55 48%,#ffffff55 50%,transparent 50%),repeating-linear-gradient(90deg,#ffffff12 0 28px,transparent 28px 56px)}
+    .goal{position:absolute;top:24px;left:50%;transform:translateX(-50%);width:min(260px,78%);height:120px;border:6px solid #fff;border-bottom:none;border-radius:8px 8px 0 0;z-index:3}
+    .net{position:absolute;top:30px;left:50%;transform:translateX(-50%);width:min(248px,74%);height:110px;background:repeating-linear-gradient(90deg,#ffffff30 0 2px,transparent 2px 14px),repeating-linear-gradient(#ffffff30 0 2px,transparent 2px 14px);z-index:2}
+    .keeper{position:absolute;top:92px;left:50%;width:70px;height:92px;transform:translateX(-50%);transition:left .2s cubic-bezier(.2,.8,.2,1),transform .2s,top .2s;z-index:4}
+    .keeper .head{width:24px;height:24px;background:#f0c27b;border-radius:50%;margin:0 auto}
+    .keeper .body{width:42px;height:44px;background:var(--kit,#e11d48);border-radius:10px;margin:-4px auto 0}
+    .keeper .arm{position:absolute;top:22px;width:16px;height:34px;background:var(--kit,#e11d48);border-radius:8px}
+    .keeper .arm.left{left:-4px;transform:rotate(18deg)}
+    .keeper .arm.right{right:-4px;transform:rotate(-18deg)}
+    .keeper .glove{position:absolute;bottom:-4px;width:18px;height:16px;background:#fff;border-radius:6px}
+    .keeper .arm.left .glove{left:-2px}
+    .keeper .arm.right .glove{right:-2px}
+    .keeper .legs{display:flex;justify-content:center;gap:8px;margin-top:-2px}
+    .keeper .leg{width:12px;height:24px;background:#111827;border-radius:5px}
+    .keeper.dive-left{transform:translateX(-50%) rotate(-22deg)}
+    .keeper.dive-right{transform:translateX(-50%) rotate(22deg)}
+    .keeper.dive-center{transform:translateX(-50%) scale(1.08)}
+    .ball{position:absolute;bottom:26px;left:50%;width:36px;height:36px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-weight:900;transform:translateX(-50%);transition:all .38s cubic-bezier(.2,.8,.2,1);z-index:5}
+    .zones{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+    button.zone{padding:14px 6px;border:0;border-radius:12px;background:#22314f;color:#fff;font-weight:800;cursor:pointer}
+    button.zone:active{transform:scale(.96)}
+    button.zone:disabled{opacity:.4;cursor:not-allowed}
+    .stats{display:flex;justify-content:space-between;gap:5px;font-size:13px;color:#bcd0ea;margin-bottom:8px}
+    .result{font-size:21px;font-weight:900;margin-bottom:8px}
+    .actions{display:grid;gap:8px}
+    .btn{padding:12px;border:0;border-radius:12px;font-weight:800;cursor:pointer;text-decoration:none;display:block;text-align:center}
+    .primary{background:#22c55e;color:#04220f}
+    .ghost{background:#22314f;color:#fff}
+    .hidden{display:none!important}
+    #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6;transition:opacity .12s}
+    #message{position:absolute;top:150px;left:50%;transform:translateX(-50%);font-size:20px;font-weight:900;text-shadow:0 2px 8px #000;opacity:0;transition:opacity .2s;z-index:7;white-space:nowrap}
+    #message.show{opacity:1}
+    .tabs{display:flex;gap:6px;margin-bottom:8px}
+    .tab{flex:1;padding:9px;border:0;border-radius:10px;background:#22314f;color:#fff;font-weight:800;cursor:pointer}
+    .tab.active{background:#3b82f6}
+    #leaderboard{background:#16233c;border-radius:14px;padding:10px;text-align:left;font-size:13px;margin-bottom:10px}
+    #leaderboard .score-row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #24324f}
+    #leaderboard .score-row:last-child{border-bottom:0}
+    #challengeBox{background:#16233c;border-radius:14px;padding:10px;margin-bottom:10px}
+    #challengeBox input{width:100%;padding:10px;border:0;border-radius:10px;background:#0b1220;color:#fff;margin-bottom:8px;text-align:center}
+    #autoInfo{font-size:12px;color:#9fb0cd;margin-top:8px}
+    .small-note{font-size:11px;color:#9fb0cd;line-height:1.4;margin-top:8px}
+    button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+    .fx{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+    .fx span{position:absolute;top:-24px;animation:fall linear infinite;opacity:.9}
+    .fx span.up{top:auto;bottom:-24px;animation-name:rise}
+    .fx span.sun{top:8px;right:12px;font-size:34px;animation:none}
+    @keyframes fall{to{transform:translateY(350px) rotate(360deg)}}
+    @keyframes rise{to{transform:translateY(-350px) rotate(30deg);opacity:0}}
+    .themeBar{display:flex;align-items:center;gap:8px;background:#16233c;border-radius:14px;padding:9px;margin-bottom:10px}
+.keeper .head{position:relative}
+    .keeper .head::after{content:var(--hat,'');position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:18px;line-height:1}
+    .power{position:relative;height:18px;border-radius:9px;margin:2px 4px 6px;background:linear-gradient(90deg,#ef4444 0 30%,#facc15 30% 75%,#22c55e 75% 92%,#ef4444 92% 100%)}
+    .powerMark{position:absolute;top:-5px;bottom:-5px;width:6px;border-radius:3px;background:#fff;box-shadow:0 0 10px #fff;left:0}
+    .powerHint{font-size:12px;color:#a8b2dc;text-align:center;margin-bottom:8px}
+    button.zone{padding:11px 4px;font-size:13px}
+    .zones{grid-template-columns:repeat(3,1fr)}
+    .coinTag{color:#facc15}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>⚽ Penalty Challenge</h1>
+    <p class="sub">Choisis un pays, un niveau et défie tes amis !</p>
+    <button class="btn primary" id="installBtn" type="button" style="width:100%;margin-bottom:10px">📲 Installer l’app</button>
+    <div class="themeBar"><button class="change" id="badgesBtn" type="button" style="margin-left:0">🏅 Badges et amis</button><button class="change" id="inviteBtn" type="button">📤 Inviter</button></div>
+    <div class="themeBar"><span id="netBadge" style="font-size:12px;font-weight:800"></span><button class="change" id="giftBtn" type="button">🎁 Cadeau du jour</button></div>
+    <div id="ctMain" style="text-align:center;font-weight:800;font-size:13px;margin:-4px 0 10px;color:#facc15"></div>
+    <div id="challengeBanner" class="hidden" style="background:#7c2d12;border-radius:12px;padding:9px;margin-bottom:10px;font-weight:700;font-size:13px"></div>
+
+    <div class="countryBar">
+      <span class="flag" id="flag">🇸🇳</span>
+      <span class="countryName" id="countryName">Sénégal</span>
+      <button class="change" id="changeCountryBtn" type="button">Changer</button>
+    </div>
+
+    <div class="themeBar">
+      <span class="flag" id="themeEmoji">🏟️</span>
+      <span class="countryName">Décor : <span id="themeName">Stade</span></span>
+      <button class="change" id="changeThemeBtn" type="button">Choisir</button>
+    </div>
+
+    <div class="themeBar">
+      <button class="change" id="musicBtn" type="button">🎵 Musique : OFF</button>
+      <button class="change" id="soundBtn" type="button">🔊 Sons : ON</button>
+    </div>
+
+    <div class="levels" aria-label="Niveau de difficulté">
+      <button class="level active" data-level="0" type="button">Facile</button>
+      <button class="level" data-level="1" type="button">Normal</button>
+      <button class="level" data-level="2" type="button">Difficile</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="game" type="button">Jeu</button>
+      <button class="tab" data-tab="leader" type="button">Classement</button>
+      <button class="tab" data-tab="challenge" type="button">Défi</button>
+      <button class="tab" data-tab="info" type="button">Infos</button>
+    </div>
+
+    <section id="gameSection">
+      <div class="field" id="field">
+        <div class="sky" id="sky"></div>
+        <div class="crowd" id="crowd"></div>
+        <div class="fx" id="fx"></div>
+        <div class="stadium" id="stadium"></div>
+        <div class="lines"></div>
+        <div class="goal"></div>
+        <div class="net"></div>
+        <div class="keeper" id="keeper" aria-label="Gardien">
+          <div class="head"></div>
+          <div class="body"></div>
+          <div class="arm left"><div class="glove"></div></div>
+          <div class="arm right"><div class="glove"></div></div>
+          <div class="legs"><div class="leg"></div><div class="leg"></div></div>
+        </div>
+        <div class="ball" id="ball">⚽</div>
+        <div id="flash"></div>
+        <div id="message" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="stats">
+        <span>Tirs : <b id="shots">0</b>/5</span>
+        <span>Buts : <b id="goals">0</b></span>
+        <span class="coinTag">🪙 <b id="coins">0</b></span>
+        <span>Record : <b id="best">0</b></span>
+      </div>
+
+      <div class="power" id="power"><div class="powerMark" id="powerMark"></div></div>
+      <div class="powerHint">⚡ Choisis un coin et appuie quand la barre est dans le <b style="color:#22c55e">vert</b></div>
+      <div class="zones">
+        <button class="zone" data-zone="0" type="button">↖️ Haut G</button>
+        <button class="zone" data-zone="1" type="button">⬆️ Haut</button>
+        <button class="zone" data-zone="2" type="button">↗️ Haut D</button>
+        <button class="zone" data-zone="3" type="button">↙️ Bas G</button>
+        <button class="zone" data-zone="4" type="button">⬇️ Bas</button>
+        <button class="zone" data-zone="5" type="button">↘️ Bas D</button>
+      </div>
+
+      <div id="gameOver" class="hidden">
+        <div class="result" id="resultText"></div>
+        <div class="actions">
+          <a class="btn primary" id="shareBtn" href="#" target="_blank" rel="noopener">Partager mon score</a>
+          <button class="btn ghost" id="restartBtn" type="button">Rejouer maintenant</button>
+          <p id="autoInfo">Nouvelle partie automatique dans <b id="countdown">5</b>…</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="leaderSection" class="hidden">
+      <div id="leaderboard"></div>
+      <button class="btn ghost" id="clearBoardBtn" type="button">Effacer mon classement local</button>
+      <p class="small-note">Ce classement est enregistré uniquement sur cet appareil. Le classement de la semaine, avec tous les joueurs, est dans « Badges et amis ».</p>
+      <button class="btn primary" id="openWeekBtn" type="button" style="width:100%">🏆 Voir le classement de la semaine</button>
+    </section>
+
+    <section id="challengeSection" class="hidden">
+      <div id="challengeBox">
+        <input id="friendName" placeholder="Nom de ton ami" maxlength="18" autocomplete="off">
+        <button class="btn primary" id="createChallengeBtn" type="button">Créer un défi</button>
+        <p class="sub" id="challengeResult" style="margin-top:10px" aria-live="polite"></p>
+      </div>
+      <p class="small-note">Le lien partage le score à battre. La vérification officielle des scores entre appareils nécessitera un service en ligne.</p>
+    </section>
+    <section id="infoSection" class="hidden">
+      <div style="background:#16233c;border-radius:14px;padding:12px;margin-bottom:10px;text-align:left;font-size:13px;line-height:1.5">
+        <h2 style="font-size:16px;margin:0 0 6px">Comment jouer</h2>
+        <p>1. Choisis ton pays et ton niveau.<br>2. Choisis un des 6 coins du but et appuie quand la barre est dans le vert : trop faible, le gardien l’arrête ; trop fort, ça part au-dessus !<br>3. Marque un maximum de buts sur 5 tirs.<br>4. Chaque but rapporte des pièces : utilise-les pour débloquer de nouveaux décors.<br>5. Partage ton score et défie tes amis avec un lien.</p>
+        <h2 style="font-size:16px;margin:12px 0 6px">Confidentialité</h2>
+        <p>Penalty Challenge ne crée aucun compte. Ton pseudo, ton record et ton classement sont enregistrés uniquement sur ton appareil (stockage local du navigateur). Nous ne les envoyons à aucun serveur. Quand tu partages un défi, le score et le nom figurent dans le lien que tu envoies. Tu peux effacer tes données à tout moment depuis l’onglet Classement ou en vidant les données du navigateur.</p>
+        <p><b>Publicité.</b> Ce site peut afficher des publicités fournies par Monetag et Google AdSense. Ces régies et leurs partenaires peuvent utiliser des cookies ou des identifiants publicitaires pour afficher des annonces, personnalisées ou non selon tes choix et ta région. Tu peux gérer tes préférences sur <a href="https://adssettings.google.com" style="color:#60a5fa">adssettings.google.com</a>. Nous ne recevons pas tes données personnelles via ces annonces.</p>
+        <p><b>Invitations.</b> Si tu invites des amis, un identifiant anonyme (sans nom ni e-mail) est enregistré sur notre serveur pour compter les invitations. Elles ne sont comptées que lorsque tu es connecté à internet. Si tu choisis un pseudo pour le concours de la semaine, il est enregistré sur notre serveur et visible par les autres joueurs.</p>
+        <h2 style="font-size:16px;margin:12px 0 6px">Contact</h2>
+        <p>Une question, une idée ou un bug ? Écris-nous : <a href="mailto:wahibdjinadou7@gmail.com" style="color:#60a5fa">wahibdjinadou7@gmail.com</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script>(function(s){s.dataset.zone='12305516',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+  <script>(function(s){s.dataset.zone='12305519',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+  <script>
+    'use strict';
+
+    const countries = [
+      {name:'Sénégal',flag:'🇸🇳',kit:'#00853f',grass1:'#1f7d4b',grass2:'#125c37',sky:'linear-gradient(#0b1e3a,#123a63)',crowd:['#00853f','#fdef42']},
+      {name:'Bénin',flag:'🇧🇯',kit:'#fcd116',grass1:'#1f7d4b',grass2:'#125c37',sky:'linear-gradient(#0b1e3a,#123a63)',crowd:['#008751','#fcd116','#e8112d']},
+      {name:'Côte d’Ivoire',flag:'🇨🇮',kit:'#f77f00',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#12253d,#1c4d76)',crowd:['#f77f00','#009e60']},
+      {name:'Nigeria',flag:'🇳🇬',kit:'#008751',grass1:'#207a4d',grass2:'#135a38',sky:'linear-gradient(#0a1f33,#14486f)',crowd:['#008751','#ffffff']},
+      {name:'Cameroun',flag:'🇨🇲',kit:'#007a5e',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0e2036,#1a4b71)',crowd:['#007a5e','#ce1126']},
+      {name:'Maroc',flag:'🇲🇦',kit:'#c1272d',grass1:'#1e7a4a',grass2:'#125b36',sky:'linear-gradient(#0b1e3a,#123a63)',crowd:['#c1272d','#006233']},
+      {name:'Algérie',flag:'🇩🇿',kit:'#006233',grass1:'#207a4d',grass2:'#135a38',sky:'linear-gradient(#0a1f33,#14486f)',crowd:['#006233','#ffffff']},
+      {name:'France',flag:'🇫🇷',kit:'#1d4ed8',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#1d4ed8','#ffffff']},
+      {name:'Brésil',flag:'🇧🇷',kit:'#facc15',grass1:'#1f7d4b',grass2:'#125c37',sky:'linear-gradient(#0a1f33,#14486f)',crowd:['#009c3b','#ffdf00']},
+      {name:'Ghana',flag:'🇬🇭',kit:'#ce1126',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#ce1126', '#fcd116', '#006b3f']},
+      {name:'Mali',flag:'🇲🇱',kit:'#14b53a',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#14b53a', '#fcd116', '#ce1126']},
+      {name:'Togo',flag:'🇹🇬',kit:'#006a4e',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#006a4e', '#ffce00', '#d21034']},
+      {name:'Égypte',flag:'🇪🇬',kit:'#ce1126',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#ce1126', '#ffffff', '#000000']},
+      {name:'Afrique du Sud',flag:'🇿🇦',kit:'#007a4d',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#007a4d', '#ffb612', '#de3831']},
+      {name:'Argentine',flag:'🇦🇷',kit:'#75aadb',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#75aadb', '#ffffff']},
+      {name:'Espagne',flag:'🇪🇸',kit:'#c60b1e',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#c60b1e', '#ffc400']},
+      {name:'Portugal',flag:'🇵🇹',kit:'#006600',grass1:'#1d7a45',grass2:'#115b33',sky:'linear-gradient(#0d2038,#1c4d76)',crowd:['#006600', '#ff0000']}
+    ];
+
+    const levels = [
+      {name:'Facile',chance:0.25},
+      {name:'Normal',chance:0.40},
+      {name:'Difficile',chance:0.55}
+    ];
+
+    const STORAGE_BEST = 'pc_best';
+    const STORAGE_BOARD = 'pc_board';
+    const positions = ['20%','50%','80%'];
+
+    const $ = id => document.getElementById(id);
+    const keeper = $('keeper');
+    const ball = $('ball');
+    const flash = $('flash');
+    const message = $('message');
+    const field = $('field');
+    const sky = $('sky');
+    const crowd = $('crowd');
+    const stadium = $('stadium');
+
+    let challengeTarget = null;
+    let current = 0;
+    let level = 0;
+    let shot = 0;
+    let goals = 0;
+    let locked = false;
+    let autoTimer = null;
+    let messageTimer = null;
+    let best = readBest();
+    let board = readBoard();
+
+    function readBest() {
+      try { return Math.max(0, Number(localStorage.getItem(STORAGE_BEST)) || 0); }
+      catch (error) { return 0; }
+    }
+
+    function readBoard() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_BOARD) || '[]');
+        return Array.isArray(saved) ? saved.filter(item =>
+          item && typeof item.name === 'string' &&
+          Number.isFinite(Number(item.score)) &&
+          typeof item.country === 'string' &&
+          typeof item.level === 'string'
+        ).slice(0, 10) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveBoard() {
+      try { localStorage.setItem(STORAGE_BOARD, JSON.stringify(board)); }
+      catch (error) { showMessage('Stockage indisponible', '#fbbf24'); }
+    }
+
+    const themes = [
+      {name:'Stade',emoji:'🏟️'},
+      {name:'Plage',hat:'👒',emoji:'🏖️',sky:'linear-gradient(#38bdf8 0 40%,#0ea5e9 40% 58%,#f4d58d 58%)',g1:'#f2d38a',g2:'#d9b45f',fx:'🌊',n:0},
+      {name:'Désert',hat:'🤠',kit:'#78350f',emoji:'🏜️',sky:'linear-gradient(#fcd34d,#fb923c)',g1:'#e9b765',g2:'#c98b3a',fx:'☀️',sun:1},
+      {name:'Neige',hat:'🧢',kit:'#1e40af',emoji:'❄️',sky:'linear-gradient(#94a3b8,#e2e8f0)',g1:'#f1f5f9',g2:'#cbd5e1',fx:'❄️',n:14},
+      {name:'Été',hat:'🕶️',emoji:'☀️',sky:'linear-gradient(#38bdf8,#bae6fd)',g1:'#22c55e',g2:'#15803d',fx:'☀️',sun:1},
+      {name:'Automne',hat:'🎩',kit:'#9a3412',emoji:'🍂',sky:'linear-gradient(#f59e0b,#78350f)',g1:'#b45309',g2:'#78350f',fx:'🍂',n:12},
+      {name:'Ciel',hat:'✨',kit:'#0ea5e9',emoji:'☁️',sky:'linear-gradient(#1e3a8a,#60a5fa)',g1:'#f8fafc',g2:'#dbeafe',fx:'☁️',n:6},
+      {name:'Enfer',hat:'😈',kit:'#111827',emoji:'🔥',sky:'linear-gradient(#1c0505,#7f1d1d)',g1:'#7f1d1d',g2:'#2b0a0a',fx:'🔥',n:10,up:1}
+    ];
+    let coins = 0, unlockedThemes = [0];
+    const THEME_PRICE = [0, 150, 250, 350, 450, 600, 800, 1000];
+    try {
+      coins = Math.max(0, Number(localStorage.getItem('pc_coins')) || 0);
+      const u = JSON.parse(localStorage.getItem('pc_unlocked') || '[0]');
+      if (Array.isArray(u)) unlockedThemes = u.filter(Number.isInteger);
+      if (!unlockedThemes.includes(0)) unlockedThemes.push(0);
+    } catch (e) {}
+    function saveCoins() {
+      try { localStorage.setItem('pc_coins', String(coins)); localStorage.setItem('pc_unlocked', JSON.stringify(unlockedThemes)); } catch (e) {}
+      const el = $('coins'); if (el) el.textContent = String(coins);
+    }
+    let themeIndex = 0;
+    try { themeIndex = Math.min(themes.length - 1, Math.max(0, Number(localStorage.getItem('pc_theme')) || 0)); } catch (e) {}
+    if (!unlockedThemes.includes(themeIndex)) themeIndex = 0;
+
+    function applyTheme() {
+      const t = themes[themeIndex];
+      $('themeEmoji').textContent = t.emoji;
+      $('themeName').textContent = t.name;
+      const fx = $('fx');
+      fx.innerHTML = '';
+      const c = countries[current];
+      keeper.style.setProperty('--hat', `"${t.hat || ''}"`);
+      keeper.style.setProperty('--kit', t.kit || c.kit);
+      if (!t.sky) {
+        crowd.style.display = '';
+        field.style.background = `linear-gradient(${c.grass1},${c.grass2})`;
+        sky.style.background = c.sky;
+        stadium.style.background = `linear-gradient(${c.grass1},${c.grass2})`;
+        return;
+      }
+      crowd.style.display = 'none';
+      field.style.background = `linear-gradient(${t.g1},${t.g2})`;
+      sky.style.background = t.sky;
+      stadium.style.background = `linear-gradient(${t.g1},${t.g2})`;
+      if (t.sun) {
+        const sun = document.createElement('span');
+        sun.className = 'sun';
+        sun.textContent = t.fx;
+        fx.appendChild(sun);
+      }
+      for (let i = 0; i < (t.n || 0); i++) {
+        const span = document.createElement('span');
+        span.textContent = t.fx;
+        if (t.up) span.className = 'up';
+        span.style.left = (Math.random() * 95) + '%';
+        span.style.fontSize = (12 + Math.random() * 12) + 'px';
+        span.style.animationDuration = (4 + Math.random() * 5) + 's';
+        span.style.animationDelay = (-Math.random() * 8) + 's';
+        fx.appendChild(span);
+      }
+    }
+
+    function changeTheme() {
+      themeIndex = (themeIndex + 1) % themes.length;
+      try { localStorage.setItem('pc_theme', String(themeIndex)); } catch (e) {}
+      applyTheme();
+      showMessage(themes[themeIndex].emoji + ' ' + themes[themeIndex].name, '#60a5fa');
+    }
+    function openThemeShop() {
+      const o = document.createElement('div');
+      o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:999;display:flex;align-items:center;justify-content:center;padding:14px';
+      const box = document.createElement('div');
+      box.style.cssText = 'background:#16233c;border-radius:18px;padding:16px;max-width:380px;width:100%;max-height:88vh;overflow:auto';
+      const head = document.createElement('div');
+      head.innerHTML = '<h2 style="margin:0 0 4px;font-size:19px">🎨 Décors</h2><div style="font-size:13px;color:#facc15;margin-bottom:10px">Tes pièces : 🪙 <b id="shopCoins">' + coins + '</b></div>';
+      box.appendChild(head);
+      function build() {
+        box.querySelectorAll('.row').forEach(r => r.remove());
+        themes.forEach((t, i) => {
+          const ok = unlockedThemes.includes(i), r = document.createElement('div');
+          r.className = 'row';
+          r.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:11px;margin-bottom:6px;border-radius:12px;background:#22314f;font-weight:800;cursor:pointer;opacity:' + (ok ? 1 : .8) + (i === themeIndex ? ';outline:2px solid #22c55e' : '');
+          r.innerHTML = '<span>' + t.emoji + ' ' + t.name + '</span><span style="font-size:13px">' + (i === themeIndex ? '✔ Actif' : ok ? 'Choisir' : '🔒 ' + THEME_PRICE[i] + ' 🪙') + '</span>';
+          r.addEventListener('click', () => {
+            if (!ok) {
+              if (coins < THEME_PRICE[i]) { showMessage('Il te manque ' + (THEME_PRICE[i] - coins) + ' 🪙', '#facc15'); return; }
+              if (!confirm('Débloquer ' + t.name + ' pour ' + THEME_PRICE[i] + ' pièces ?')) return;
+              coins -= THEME_PRICE[i]; unlockedThemes.push(i); saveCoins();
+              const sc = $('shopCoins'); if (sc) sc.textContent = String(coins);
+            }
+            themeIndex = i;
+            try { localStorage.setItem('pc_theme', String(themeIndex)); } catch (e) {}
+            applyTheme(); o.remove();
+            showMessage(t.emoji + ' ' + t.name, '#60a5fa');
+          });
+          box.appendChild(r);
+        });
+      }
+      build();
+      const close = document.createElement('button');
+      close.className = 'btn primary'; close.type = 'button'; close.style.cssText = 'width:100%;margin-top:8px'; close.textContent = 'Fermer';
+      close.addEventListener('click', () => o.remove());
+      box.appendChild(close); o.appendChild(box);
+      o.addEventListener('click', ev => { if (ev.target === o) o.remove(); });
+      document.body.appendChild(o);
+    }
+    $('changeThemeBtn').addEventListener('click', openThemeShop);
+
+    function applyCountry() {
+      const country = countries[current];
+      $('flag').textContent = country.flag;
+      $('countryName').textContent = country.name;
+      field.style.background = `linear-gradient(${country.grass1},${country.grass2})`;
+      sky.style.background = country.sky;
+      stadium.style.background = `linear-gradient(${country.grass1},${country.grass2})`;
+      crowd.style.setProperty('--crowd1', country.crowd[0]);
+      crowd.style.setProperty('--crowd2', country.crowd[1]);
+      keeper.style.setProperty('--kit', country.kit);
+      applyTheme();
+    }
+
+    function changeCountry() {
+      current = (current + 1) % countries.length;
+      applyCountry();
+      resetGame();
+      showMessage(countries[current].flag + ' ' + countries[current].name, '#60a5fa');
+    }
+
+    function showMessage(text, color) {
+      clearTimeout(messageTimer);
+      message.textContent = text;
+      message.style.color = color;
+      message.classList.add('show');
+      messageTimer = setTimeout(() => message.classList.remove('show'), 850);
+    }
+
+    /* ===== Sons : sifflet, ambiance, musique originale ===== */
+    let actx = null, sfx = null, mus = null, noiseBuf = null, mTimer = null, mStep = 0, mNext = 0;
+    let soundOn = true, musicOn = false;
+    try { soundOn = localStorage.getItem('pc_sound') !== '0'; } catch (e) {}
+    function audio() {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        actx = new AC();
+        sfx = actx.createGain(); sfx.gain.value = 0.9; sfx.connect(actx.destination);
+        mus = actx.createGain(); mus.gain.value = 0.45; mus.connect(actx.destination);
+        noiseBuf = actx.createBuffer(1, actx.sampleRate, actx.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return actx;
+    }
+    function tone(out, t, f, d, type, vol, lp, f2) {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t);
+      if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+      let node = o;
+      if (lp) { const b = actx.createBiquadFilter(); b.type = 'lowpass'; b.frequency.value = lp; o.connect(b); node = b; }
+      node.connect(g);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+      g.connect(out); o.start(t); o.stop(t + d + 0.03);
+    }
+    function noise(out, t, d, vol, freq, type, swell) {
+      const s = actx.createBufferSource(), g = actx.createGain(), f = actx.createBiquadFilter();
+      s.buffer = noiseBuf; s.loop = true; f.type = type || 'highpass'; f.frequency.value = freq; f.Q.value = 0.6;
+      if (swell) { g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(vol, t + swell); }
+      else g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + d);
+      s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + d + 0.03);
+    }
+    function whistle(long) {
+      if (!soundOn || !audio()) return;
+      const t = actx.currentTime, d = long ? 0.7 : 0.32;
+      const o = actx.createOscillator(), lfo = actx.createOscillator(), lg = actx.createGain(), g = actx.createGain();
+      o.type = 'sine'; o.frequency.value = 2900;
+      lfo.frequency.value = 34; lg.gain.value = 140; lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.35, t + 0.03);
+      g.gain.setValueAtTime(0.35, t + d - 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+      o.connect(g); g.connect(sfx); o.start(t); lfo.start(t); o.stop(t + d + 0.03); lfo.stop(t + d + 0.03);
+      noise(sfx, t, d, 0.05, 4500, 'highpass');
+    }
+    function playSound(type) {
+      if (!soundOn || !audio()) return;
+      const t = actx.currentTime;
+      if (type === 'goal') {
+        noise(sfx, t, 1.6, 0.4, 900, 'bandpass', 0.35);
+        [523, 659, 784, 1047].forEach((f, i) => tone(sfx, t + i * 0.09, f, 0.3, 'triangle', 0.2));
+      } else {
+        noise(sfx, t, 0.25, 0.3, 300, 'lowpass');
+        tone(sfx, t, 420, 0.5, 'sawtooth', 0.12, 1200, 190);
+      }
+    }
+    const BPM = 124, ROOT = [48, 43, 45, 41], CH = [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]];
+    const MEL = [
+      [79,0,0,79,0,76,0,79,0,0,81,0,79,0,76,0],
+      [74,0,0,74,0,79,0,74,0,0,76,0,74,0,71,0],
+      [76,0,0,76,0,81,0,76,0,0,79,0,76,0,72,0],
+      [72,0,0,76,0,79,0,76,0,0,72,0,74,0,72,0]
+    ];
+    const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+    function kick(t) {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+      g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      o.connect(g); g.connect(mus); o.start(t); o.stop(t + 0.25);
+    }
+    function playStep(n, t) {
+      const q = n % 64, bar = Math.floor(q / 16), i = q % 16;
+      if (i % 4 === 0) kick(t);
+      if (i === 4 || i === 12) { noise(mus, t, 0.14, 0.45, 1500); tone(mus, t, 190, 0.08, 'triangle', 0.22); }
+      if (i % 2 === 1) noise(mus, t, 0.04, 0.1, 7000);
+      if ([0, 3, 6, 8, 11, 14].includes(i)) tone(mus, t, hz(ROOT[bar]), 0.2, 'sawtooth', 0.28, 420);
+      if ([0, 6, 10].includes(i)) CH[bar].forEach(m => tone(mus, t, hz(m), 0.16, 'sawtooth', 0.06, 2400));
+      const m = MEL[bar][i];
+      if (m) tone(mus, t, hz(m), 0.22, 'square', 0.08, 3000);
+    }
+    function sched() { while (mNext < actx.currentTime + 0.15) { playStep(mStep, mNext); mNext += 60 / BPM / 4; mStep++; } }
+    function startMusic() { if (!audio()) return false; mStep = 0; mNext = actx.currentTime + 0.08; mTimer = setInterval(sched, 25); return true; }
+    function stopMusic() { clearInterval(mTimer); mTimer = null; }
+    function refreshSoundButtons() {
+      $('musicBtn').textContent = '🎵 Musique : ' + (musicOn ? 'ON' : 'OFF');
+      $('soundBtn').textContent = '🔊 Sons : ' + (soundOn ? 'ON' : 'OFF');
+    }
+    $('musicBtn').addEventListener('click', () => {
+      if (musicOn) { musicOn = false; stopMusic(); } else { musicOn = startMusic(); }
+      refreshSoundButtons();
+    });
+    $('soundBtn').addEventListener('click', () => {
+      soundOn = !soundOn;
+      try { localStorage.setItem('pc_sound', soundOn ? '1' : '0'); } catch (e) {}
+      if (soundOn) whistle(false);
+      refreshSoundButtons();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (!actx) return;
+      if (document.hidden) actx.suspend(); else actx.resume();
+    });
+
+    function resetKeeperAndBall() {
+      keeper.style.left = '50%';
+      keeper.style.top = '';
+      keeper.classList.remove('dive-left', 'dive-right', 'dive-center');
+      ball.style.bottom = '26px';
+      ball.style.left = '50%';
+    }
+
+    /* ----- jauge de puissance ----- */
+    let power = 0, pdir = 1, pLast = performance.now();
+    function powerLoop(now) {
+      const dt = Math.min(0.05, (now - pLast) / 1000); pLast = now;
+      power += pdir * dt * (70 + level * 30);
+      if (power >= 100) { power = 100; pdir = -1; }
+      if (power <= 0) { power = 0; pdir = 1; }
+      $('powerMark').style.left = 'calc(' + power + '% - ' + (power * 0.06) + 'px)';
+      requestAnimationFrame(powerLoop);
+    }
+    requestAnimationFrame(powerLoop);
+
+    /* ----- effets ----- */
+    function bigText(txt, color) {
+      const d = document.createElement('div');
+      d.textContent = txt;
+      d.style.cssText = 'position:absolute;left:0;right:0;top:34%;text-align:center;font-size:44px;font-weight:900;color:' + color + ';text-shadow:0 4px 18px #000;pointer-events:none;z-index:8';
+      field.appendChild(d);
+      d.animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1.15)', opacity: 1, offset: .3 }, { transform: 'scale(1)', opacity: 1, offset: .7 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 1100 }).onfinish = () => d.remove();
+    }
+    function confetti() {
+      const cols = ['#ffd23f', '#22c55e', '#ef4444', '#3b82f6', '#ec4899', '#ffffff'];
+      for (let i = 0; i < 34; i++) {
+        const c = document.createElement('div'), x = Math.random() * 100;
+        c.style.cssText = 'position:absolute;top:-10px;left:' + x + '%;width:8px;height:12px;background:' + cols[i % cols.length] + ';pointer-events:none;z-index:8';
+        field.appendChild(c);
+        c.animate([{ transform: 'translateY(0) rotate(0)', opacity: 1 }, { transform: 'translate(' + (Math.random() * 60 - 30) + 'px,' + (260 + Math.random() * 60) + 'px) rotate(' + (360 + Math.random() * 360) + 'deg)', opacity: .9 }], { duration: 900 + Math.random() * 600, easing: 'ease-in' }).onfinish = () => c.remove();
+      }
+    }
+    function shakeField() {
+      field.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-9px)' }, { transform: 'translateX(9px)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(0)' }], { duration: 300 });
+    }
+
+    function takeShot(zone) {
+      if (locked || shot >= 5) return;
+      locked = true;
+      whistle(false);
+
+      const p = power;
+      const col = zone % 3, row = Math.floor(zone / 3);
+      const difficulty = levels[level];
+      const kz = Math.random() < difficulty.chance ? zone : Math.floor(Math.random() * 6);
+      const kc = kz % 3, kr = Math.floor(kz / 3);
+
+      let outcome;
+      if (p > 92) outcome = 'over';
+      else if (p < 30) outcome = 'weak';
+      else if (kz === zone) outcome = (p >= 75 && Math.random() < 0.5) ? 'power' : 'saved';
+      else outcome = 'goal';
+
+      const kcol = outcome === 'weak' ? col : kc;
+      keeper.style.left = positions[kcol];
+      keeper.style.top = (outcome === 'weak' ? row : kr) === 0 ? '66px' : '104px';
+      keeper.classList.remove('dive-left', 'dive-right', 'dive-center');
+      if (kcol === 0) keeper.classList.add('dive-left');
+      else if (kcol === 1) keeper.classList.add('dive-center');
+      else keeper.classList.add('dive-right');
+
+      ball.style.bottom = outcome === 'over' ? '250px' : outcome === 'weak' ? '110px' : (row === 0 ? '205px' : '150px');
+      ball.style.left = positions[col];
+
+      setTimeout(() => {
+        const scored = outcome === 'goal' || outcome === 'power';
+        if (scored) {
+          goals++;
+          const gain = Math.round((10 + (p >= 75 ? 5 : 0)) * coinMult());
+          coins += gain; saveCoins();
+          flash.style.opacity = '0.7';
+          setTimeout(() => { flash.style.opacity = '0'; }, 100);
+          bigText(outcome === 'power' ? 'TIR PUISSANT !' : 'GOOOAL !', '#22c55e');
+          confetti();
+          showMessage('+' + gain + ' 🪙', '#facc15');
+          playSound('goal');
+        } else {
+          shakeField();
+          showMessage(outcome === 'over' ? 'Au-dessus ! 😬' : outcome === 'weak' ? 'Trop mou… 🐌' : 'Arrêté ! 🧤', '#ef4444');
+          playSound('save');
+        }
+
+        $('goals').textContent = String(goals);
+        shot++;
+        $('shots').textContent = String(shot);
+
+        setTimeout(() => {
+          resetKeeperAndBall();
+          if (shot >= 5) {
+            locked = false;
+            endGame();
+          } else {
+            locked = false;
+          }
+        }, 650);
+      }, 380);
+    }
+
+    function saveScore() {
+      if (goals <= 0) return;
+      let name = 'Joueur';
+      try {
+        const entered = window.prompt('Ton pseudo pour le classement :', 'Joueur');
+        if (entered && entered.trim()) name = entered.trim().slice(0, 18);
+      } catch (error) {}
+      board.push({
+        name,
+        score: goals,
+        country: countries[current].flag,
+        level: levels[level].name,
+        date: Date.now()
+      });
+      board.sort((a, b) => Number(b.score) - Number(a.score) || Number(a.date) - Number(b.date));
+      board = board.slice(0, 10);
+      saveBoard();
+      renderBoard();
+    }
+
+    function endGame() {
+      onGameFinished();
+      submitScore(goals * (level + 1));
+      setTimeout(() => whistle(true), 300);
+      $('gameOver').classList.remove('hidden');
+      document.querySelectorAll('.zone').forEach(button => button.disabled = true);
+
+      let rank;
+      if (goals >= 5) rank = 'Légende ⭐';
+      else if (goals >= 4) rank = 'Tireur d’élite 🔥';
+      else if (goals >= 3) rank = 'Bon joueur 👏';
+      else if (goals >= 1) rank = 'À améliorer 💪';
+      else rank = 'Le gardien a gagné 😅';
+
+      if (goals >= 5) { coins += Math.round(25 * coinMult()); saveCoins(); }
+      $('resultText').textContent = `${goals}/5 — ${rank}` + (goals >= 5 ? ' (+25 🪙 bonus)' : '');
+      if (challengeTarget !== null) {
+        $('resultText').textContent += goals > challengeTarget ? ' — Défi gagné ! 🏆' : goals === challengeTarget ? ' — Égalité 🤝' : ' — Défi perdu 😅';
+      }
+
+      if (goals > best) {
+        best = goals;
+        try { localStorage.setItem(STORAGE_BEST, String(best)); } catch (error) {}
+        $('best').textContent = String(best);
+      }
+
+      saveScore();
+      const country = countries[current];
+      const shareText = `J’ai marqué ${goals}/5 à Penalty Challenge avec ${country.flag} ${country.name} (${levels[level].name}) ! Peux-tu me battre ?`;
+      $('shareBtn').href = 'https://wa.me/?text=' + encodeURIComponent(shareText + ' ' + myLink());
+      if (!window.__shareHook) { window.__shareHook = true; $('shareBtn').addEventListener('click', registerShare); }
+      startAutoRestart();
+    }
+
+    function startAutoRestart() {
+      clearInterval(autoTimer);
+      let remaining = 5;
+      $('countdown').textContent = String(remaining);
+      autoTimer = setInterval(() => {
+        remaining--;
+        $('countdown').textContent = String(remaining);
+        if (remaining <= 0) {
+          clearInterval(autoTimer);
+          resetGame();
+        }
+      }, 1000);
+    }
+
+    function resetGame() {
+      clearInterval(autoTimer);
+      shot = 0;
+      goals = 0;
+      locked = false;
+      $('shots').textContent = '0';
+      $('goals').textContent = '0';
+      $('gameOver').classList.add('hidden');
+      document.querySelectorAll('.zone').forEach(button => button.disabled = false);
+      resetKeeperAndBall();
+    }
+
+    function renderBoard() {
+      const element = $('leaderboard');
+      element.replaceChildren();
+
+      const heading = document.createElement('b');
+      heading.textContent = 'Top 10 local';
+      element.appendChild(heading);
+
+      if (!board.length) {
+        const empty = document.createElement('p');
+        empty.className = 'sub';
+        empty.style.marginTop = '8px';
+        empty.textContent = 'Aucun score pour le moment.';
+        element.appendChild(empty);
+        return;
+      }
+
+      board.forEach((score, index) => {
+        const row = document.createElement('div');
+        row.className = 'score-row';
+
+        const player = document.createElement('span');
+        player.textContent = `${index + 1}. ${score.country} ${score.name}`;
+
+        const points = document.createElement('span');
+        points.textContent = `${score.score}/5 • ${score.level}`;
+
+        row.append(player, points);
+        element.appendChild(row);
+      });
+    }
+
+    function clearBoard() {
+      if (!window.confirm('Effacer le classement local ?')) return;
+      board = [];
+      try { localStorage.removeItem(STORAGE_BOARD); } catch (error) {}
+      renderBoard();
+    }
+
+    function createChallenge() {
+      const enteredName = $('friendName').value.trim().slice(0, 18);
+      const friendName = enteredName || 'ton ami';
+      const target = Math.max(1, goals || 3);
+      const url = new URL(window.location.href);
+      url.search = '';
+      url.searchParams.set('ref', pid);
+      url.hash = new URLSearchParams({target: String(target), from: friendName}).toString();
+
+      const result = $('challengeResult');
+      result.replaceChildren();
+
+      const messageText = document.createElement('span');
+      messageText.textContent = `Défi créé pour ${friendName} : bats ${target}/5. `;
+      const text = `⚽ ${friendName}, bats mon score de ${target}/5 sur Penalty Challenge ! ${url.toString()}`;
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      actions.style.marginTop = '10px';
+      const wa = document.createElement('a');
+      wa.className = 'btn primary';
+      wa.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+      wa.target = '_blank';
+      wa.rel = 'noopener';
+      wa.textContent = 'Envoyer sur WhatsApp';
+      wa.addEventListener('click', registerShare);
+      const more = document.createElement('button');
+      more.className = 'btn ghost';
+      more.type = 'button';
+      more.textContent = 'Partager (Facebook, SMS…)';
+      more.addEventListener('click', () => {
+        registerShare();
+        if (navigator.share) {
+          navigator.share({text}).catch(() => {});
+        } else {
+          window.prompt('Copie ce message :', text);
+        }
+      });
+      const copy = document.createElement('button');
+      copy.className = 'btn ghost';
+      copy.type = 'button';
+      copy.textContent = 'Copier le lien';
+      copy.addEventListener('click', () => {
+        registerShare();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url.toString()).then(() => showMessage('Lien copié !', '#22c55e')).catch(() => window.prompt('Copie ce lien :', url.toString()));
+        } else {
+          window.prompt('Copie ce lien :', url.toString());
+        }
+      });
+      actions.append(wa, more, copy);
+      result.append(messageText, actions);
+    }
+
+    document.querySelectorAll('.level').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.level').forEach(item => item.classList.remove('active'));
+        button.classList.add('active');
+        level = Number(button.dataset.level);
+        resetGame();
+        showMessage('Niveau ' + levels[level].name, '#22c55e');
+      });
+    });
+
+    document.querySelectorAll('.tab').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(item => item.classList.remove('active'));
+        button.classList.add('active');
+        $('gameSection').classList.add('hidden');
+        $('leaderSection').classList.add('hidden');
+        $('challengeSection').classList.add('hidden');
+        $('infoSection').classList.add('hidden');
+        $(button.dataset.tab + 'Section').classList.remove('hidden');
+        if (button.dataset.tab === 'leader') renderBoard();
+      });
+    });
+
+    document.querySelectorAll('.zone').forEach(button => {
+      button.addEventListener('click', () => takeShot(Number(button.dataset.zone)));
+    });
+
+    $('changeCountryBtn').addEventListener('click', changeCountry);
+    $('restartBtn').addEventListener('click', resetGame);
+    $('clearBoardBtn').addEventListener('click', clearBoard);
+    $('createChallengeBtn').addEventListener('click', createChallenge);
+
+    applyCountry();
+    $('best').textContent = String(best);
+    renderBoard();
+
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    if (params.has('target')) {
+      const target = Math.min(5, Math.max(1, Number(params.get('target')) || 3));
+      const from = (params.get('from') || 'ton ami').slice(0, 18);
+      challengeTarget = target;
+      const banner = $('challengeBanner');
+      banner.textContent = `🎯 Défi de ${from} : marque au moins ${target}/5 pour le battre !`;
+      banner.classList.remove('hidden');
+      showMessage(`Défi de ${from} : ${target}/5`, '#60a5fa');
+    }
+    refreshSoundButtons();
+    saveCoins();
+    function installHelp(){
+  const ua=navigator.userAgent,inApp=/TikTok|musical_ly|Instagram|FBAN|FBAV|Snapchat|Line\//i.test(ua),ios=/iPhone|iPad|iPod/i.test(ua);
+  if(inApp)return 'Tu es dans le navigateur de TikTok, Instagram ou Facebook : l’installation n’y est pas possible.<br><br>1. Appuie sur <b>⋯</b> ou <b>⋮</b> en haut ou en bas de l’écran.<br>2. Choisis <b>« Ouvrir dans le navigateur »</b> (Chrome ou Safari).<br>3. Reviens ici et appuie sur <b>📲 Installer l’app</b>.';
+  if(ios)return 'Sur iPhone, ouvre ce lien dans <b>Safari</b>.<br><br>1. Appuie sur le bouton <b>Partager</b> (le carré avec une flèche ⬆️).<br>2. Choisis <b>« Sur l’écran d’accueil »</b>.<br>3. Appuie sur <b>Ajouter</b>.';
+  return '1. Appuie sur le menu <b>⋮</b> de Chrome, en haut à droite.<br>2. Choisis <b>« Installer l’application »</b>. Si tu ne la vois pas, choisis <b>« Ajouter à l’écran d’accueil »</b>.<br>3. Confirme avec <b>Installer</b> ou <b>Créer un raccourci</b> : l’icône du jeu apparaît sur ton écran d’accueil.';
+}
+const isStandalone=()=>(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+
+    let deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
+    window.addEventListener('appinstalled', () => { $('installBtn').style.display = 'none'; });
+    if (isStandalone()) $('installBtn').style.display = 'none';
+    $('installBtn').addEventListener('click', () => {
+      if (deferredInstall) { deferredInstall.prompt(); deferredInstall.userChoice.finally(() => { deferredInstall = null; }); return; }
+      const o = document.createElement('div');
+      o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:flex;align-items:center;justify-content:center;padding:18px';
+      o.innerHTML = '<div style="background:#16233c;border-radius:18px;padding:18px;max-width:380px;width:100%;line-height:1.5;font-size:15px"><h2 style="margin:0 0 10px;font-size:19px">📲 Installer l’app</h2>' + installHelp() + '<button class="btn primary" style="width:100%;margin-top:14px" type="button">OK</button></div>';
+      o.addEventListener('click', ev => { if (ev.target === o || ev.target.tagName === 'BUTTON') o.remove(); });
+      document.body.appendChild(o);
+    });
+
+    /* ===== Bonus connexion et cadeau du jour (en ligne seulement) ===== */
+    const PFX = 'pc';
+    const NET_BONUS = 1.5;
+    function isOnline() { return navigator.onLine !== false; }
+    function coinMult() { return isOnline() ? NET_BONUS : 1; }
+    let gift = {};
+    try { gift = JSON.parse(localStorage.getItem(PFX + '_gift') || '{}') || {}; } catch (e) { gift = {}; }
+    function saveGift() { try { localStorage.setItem(PFX + '_gift', JSON.stringify(gift)); } catch (e) {} }
+    async function serverDay() {
+      const r = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+      const d = r.headers.get('date');
+      if (!d) throw new Error('no date');
+      return new Date(d).toISOString().slice(0, 10);
+    }
+    function dayBefore(day) { const t = new Date(day + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - 1); return t.toISOString().slice(0, 10); }
+    function giftAmount(n) { return Math.min(150, 50 + 25 * (n - 1)); }
+    function updateNet() {
+      const el = document.getElementById('netBadge');
+      if (el) el.textContent = isOnline() ? '🌐 En ligne : pièces +50 %' : '📴 Hors ligne : pièces normales';
+    }
+    function setGiftUI(state, amt) {
+      const b = document.getElementById('giftBtn');
+      if (!b) return;
+      b.style.boxShadow = '';
+      if (state === 'ready') { b.textContent = '🎁 Cadeau prêt : +' + amt + ' 🪙'; b.style.boxShadow = '0 0 14px #facc15'; }
+      else if (state === 'done') b.textContent = '🎁 Reviens demain';
+      else b.textContent = '🎁 Cadeau (connexion requise)';
+    }
+    async function checkGift(claim) {
+      if (!isOnline()) { setGiftUI('offline'); if (claim) giftToast('Connecte-toi à internet pour réclamer ton cadeau 🌐'); return; }
+      try {
+        const day = await serverDay();
+        if (gift.day === day) { setGiftUI('done'); if (claim) giftToast('Déjà réclamé aujourd’hui. Reviens demain ! Série : ' + (gift.streak || 1) + ' jour(s)'); return; }
+        const next = gift.day === dayBefore(day) ? (gift.streak || 0) + 1 : 1;
+        const amt = giftAmount(next);
+        if (!claim) { setGiftUI('ready', amt); return; }
+        gift = { day: day, streak: next }; saveGift();
+        addGiftCoins(amt); setGiftUI('done');
+        giftToast('🎁 +' + amt + ' 🪙 — série de ' + next + ' jour(s) !');
+      } catch (e) { setGiftUI('offline'); if (claim) giftToast('Impossible de vérifier la date. Réessaie en ligne.'); }
+    }
+    document.getElementById('giftBtn').addEventListener('click', () => checkGift(true));
+    window.addEventListener('online', () => { updateNet(); checkGift(false); });
+    window.addEventListener('offline', () => { updateNet(); setGiftUI('offline'); });
+    updateNet(); checkGift(false);
+    function giftToast(t) { showMessage(t, '#facc15'); }
+    function addGiftCoins(a) { coins += a; saveCoins(); }
+
+/* ===== Parrainage et badges ===== */
+const GAME_NAME = 'Penalty Challenge';
+const BTN_P = 'btn primary', BTN_G = 'btn ghost';
+const FRIEND_TIERS = [[1,'Bronze',50,'circle','#cd7f32'],[5,'Argent',150,'shield','#c0c8d8'],[10,'Or',300,'star','#ffd23f'],[25,'Diamant',600,'diamond','#4fe3ff'],[50,'Couronne',1200,'crown','#b57bff'],[100,'Légende',2500,'trophy','#ff6b6b']];
+const SHARE_TIERS = [[1,'Premier partage',20,'circle','#7ee787'],[5,'Messager',50,'shield','#58d68d'],[10,'Relais',100,'star','#2ecc71'],[25,'Influenceur',200,'diamond','#1abc9c'],[50,'Star',400,'crown','#16a085']];
+function lsGet(k, d) { try { const v = localStorage.getItem(PFX + '_' + k); return v === null ? d : v; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(PFX + '_' + k, String(v)); } catch (e) {} }
+let pid = lsGet('pid', '');
+if (!/^[A-Z0-9]{8,12}$/.test(pid)) {
+  const al = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', rr = crypto.getRandomValues(new Uint8Array(10));
+  pid = ''; rr.forEach(x => { pid += al[x % al.length]; }); lsSet('pid', pid);
+}
+try {
+  const r = (new URLSearchParams(location.search).get('ref') || '').toUpperCase();
+  if (/^[A-Z0-9]{8,12}$/.test(r) && r !== pid && !lsGet('ref', '')) lsSet('ref', r);
+} catch (e) {}
+function myLink() { return location.origin + '/?ref=' + pid; }
+let shares = Number(lsGet('shares', 0)) || 0, friends = Number(lsGet('friends', 0)) || 0;
+let claimed = { f: [], s: [] };
+try { claimed = JSON.parse(lsGet('claimed', '{"f":[],"s":[]}')) || claimed; } catch (e) {}
+function badgeSvg(shape, color, label, locked) {
+  const c = locked ? '#3a4560' : color;
+  const sh = {
+    circle: '<circle cx="24" cy="24" r="19" fill="' + c + '"/>',
+    shield: '<path d="M24 4 41 10V24C41 34 33 42 24 45 15 42 7 34 7 24V10Z" fill="' + c + '"/>',
+    star: '<polygon points="24,4 29.5,17.5 44,18.5 33,28 36.5,42.5 24,34.5 11.5,42.5 15,28 4,18.5 18.5,17.5" fill="' + c + '"/>',
+    diamond: '<polygon points="24,3 43,20 24,45 5,20" fill="' + c + '"/>',
+    crown: '<path d="M6 38 9 14 18 24 24 9 30 24 39 14 42 38Z" fill="' + c + '"/>',
+    trophy: '<path d="M14 6H34V20C34 27 29 31 24 31 19 31 14 27 14 20Z M21 31H27V38H21Z M15 38H33V43H15Z" fill="' + c + '"/>'
+  }[shape];
+  return '<svg viewBox="0 0 48 48" width="54" height="54">' + sh + '<text x="24" y="' + (shape === 'crown' ? '33' : '26') + '" text-anchor="middle" font-size="13" font-weight="900" fill="' + (locked ? '#7b87a6' : '#0009') + '">' + label + '</text></svg>';
+}
+function checkBadges() {
+  let changed = false;
+  FRIEND_TIERS.forEach((t, i) => { if (friends >= t[0] && !claimed.f.includes(i)) { claimed.f.push(i); changed = true; addGiftCoins(t[2]); giftToast('🏅 Badge ' + t[1] + ' ! +' + t[2] + ' 🪙'); } });
+  SHARE_TIERS.forEach((t, i) => { if (shares >= t[0] && !claimed.s.includes(i)) { claimed.s.push(i); changed = true; addGiftCoins(t[2]); giftToast('🏅 Badge ' + t[1] + ' ! +' + t[2] + ' 🪙'); } });
+  if (changed) lsSet('claimed', JSON.stringify(claimed));
+}
+function registerShare() {
+  const now = Date.now();
+  if (now - (Number(lsGet('lastshare', 0)) || 0) < 30000) return;
+  lsSet('lastshare', now); shares++; lsSet('shares', shares); checkBadges(); renderBadges();
+}
+function inviteText() { return '🎮 Viens jouer à ' + GAME_NAME + ' ! Bats mon score : ' + myLink(); }
+function doInvite() {
+  if (navigator.share) { navigator.share({ text: inviteText() }).then(registerShare).catch(() => {}); }
+  else { window.open('https://wa.me/?text=' + encodeURIComponent(inviteText()), '_blank', 'noopener'); registerShare(); }
+}
+async function refreshFriends() {
+  if (!isOnline()) return;
+  try {
+    const r = await fetch('/api/me?pid=' + pid, { cache: 'no-store' });
+    if (!r.ok) return;
+    const j = await r.json();
+    if (typeof j.count === 'number') { friends = Math.max(friends, j.count); lsSet('friends', friends); checkBadges(); renderBadges(); }
+  } catch (e) {}
+}
+function joinIfNeeded() {
+  const ref = lsGet('ref', '');
+  if (!ref || lsGet('joined', '') || !lsGet('played', '') || !isOnline()) return;
+  fetch('/api/join', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: pid, ref: ref }) })
+    .then(r => r.json()).then(j => { if (j && (j.ok || ['already', 'invalid', 'limit'].includes(j.reason))) lsSet('joined', '1'); }).catch(() => {});
+}
+function onGameFinished() { lsSet('played', '1'); joinIfNeeded(); refreshFriends(); }
+window.addEventListener('online', () => { joinIfNeeded(); refreshFriends(); });
+
+function submitScore(v) {
+  if (!isOnline() || !(v >= 1)) return;
+  fetch('/api/score', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: pid, game: 'penalty', value: Math.floor(v) }) }).catch(() => {});
+}
+async function loadContest() {
+  const o = badgeOverlay; if (!o) return;
+  const box = o.querySelector('#ct'); if (!box) return;
+  if (!isOnline()) { box.innerHTML = '<div style="margin-top:14px;font-size:13px">📴 Connecte-toi à internet pour voir le classement de la semaine et choisir ton pseudo.</div>'; return; }
+  try {
+    const rs = await Promise.all([fetch('/api/board?pid=' + pid, { cache: 'no-store' }), fetch('/contest.json?d=' + Date.now(), { cache: 'no-store' }), fetch('/api/scores?game=penalty&pid=' + pid, { cache: 'no-store' })]);
+    const b = rs[0].ok ? await rs[0].json() : null;
+    let c = {}; try { c = rs[1].ok ? await rs[1].json() : {}; } catch (e) {}
+    let sc = null; try { sc = rs[2] && rs[2].ok ? await rs[2].json() : null; } catch (e) {}
+    if (!b) { box.innerHTML = '<div style="margin-top:14px;font-size:13px">⚠️ Classement indisponible pour le moment (le serveur ne répond pas).</div>'; return; }
+    const nm = x => String(x).replace(/[&<>"]/g, '');
+    box.innerHTML = '<div style="font-weight:900;margin:16px 0 6px">🏆 Concours de la semaine</div>' +
+      '<div style="font-size:12px;opacity:.85;margin-bottom:4px">Du lundi ' + b.start + ' au dimanche ' + b.end + ' à 14 h (heure du Bénin) · Prix : ' + nm(c.prize || 'annoncé bientôt') + '</div><div id="ctd" style="font-size:14px;font-weight:900;margin-bottom:8px"></div>' +
+      (b.top.length ? '<ol style="margin:0 0 8px 18px;padding:0;font-size:14px">' + b.top.map(t => '<li>' + nm(t.name) + ' · <b>' + t.n + '</b> ami' + (t.n > 1 ? 's' : '') + '</li>').join('') + '</ol>' : '<div style="font-size:13px;opacity:.85;margin-bottom:6px">Personne n’est encore classé : invite un ami pour ouvrir le classement.</div>') +
+      '<div style="font-size:13px;margin-bottom:8px">Toi : <b>' + b.me.n + '</b> ami' + (b.me.n > 1 ? 's' : '') + ' cette semaine' + (b.me.n > 0 ? ' · rang <b>' + b.me.rank + '</b>' : '') + '</div>' +
+      '<div style="font-weight:900;margin:12px 0 6px">🎯 Meilleurs buteurs de la semaine</div>' + (sc && sc.top.length ? '<ol style="margin:0 0 8px 18px;padding:0;font-size:14px">' + sc.top.map(t => '<li>' + nm(t.name) + ' · <b>' + t.v + '</b> pt(s)</li>').join('') + '</ol><div style="font-size:13px;margin-bottom:8px">Toi : <b>' + sc.me.v + '</b> · ' + (sc.me.v > 0 ? 'rang <b>' + sc.me.rank + '</b>' : 'pas encore classé') + '</div>' : '<div style="font-size:13px;opacity:.85;margin-bottom:8px">Aucun score cette semaine : sois le premier !</div>') + '<input id="ctn" maxlength="14" placeholder="Ton pseudo public (3 à 14 caractères)" value="' + nm(b.myname || '') + '" style="width:100%;padding:10px;border-radius:8px;border:1px solid #8886;background:transparent;color:inherit;margin-bottom:6px;box-sizing:border-box">' +
+      '<button id="cts" class="btn primary" type="button">Enregistrer mon pseudo</button>' +
+      '<details style="font-size:12px;margin-top:8px"><summary>Règles du concours</summary><p>1. Un ami compte quand il termine sa première partie en ligne avec ton lien.<br>• Penalty : chaque but vaut 1 point en Facile, 2 en Normal et 3 en Difficile. Le niveau est enregistré avec ton score.<br>2. Le concours va du lundi 00 h au dimanche 14 h (heure du Bénin). Après, plus aucun score ni invitation n’est compté et le classement est figé. Il repart à zéro le lundi.<br>3. Égalité : le premier à avoir atteint le score est classé devant. En cas d’égalité parfaite, une manche décisive ou un tirage au sort est organisé dans le groupe WhatsApp.<br>4. Les faux comptes sont retirés du classement.<br>5. Le prix est annoncé par l’organisateur et peut changer : aucune somme n’est garantie.<br>6. Participation gratuite, sans obligation d’achat. Ton pseudo est visible par tous les joueurs.</p></details>';
+    const off = b.now - Date.now();
+    const fmt = ms => { const m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60); return (d ? d + ' j ' : '') + h + ' h ' + (m % 60) + ' min'; };
+    const tick = () => { const el = box.querySelector('#ctd'); if (!el) { clearInterval(box._t); return; } const ms = b.deadline - (Date.now() + off); el.textContent = ms > 0 ? '⏳ Fin du concours dans ' + fmt(ms) : '🏁 Concours terminé : le classement final est figé.'; };
+    clearInterval(box._t); tick(); box._t = setInterval(tick, 30000);
+    box.querySelector('#cts').onclick = async function () {
+      const v = box.querySelector('#ctn').value.trim();
+      try {
+        const r = await fetch('/api/name', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: pid, name: v }) });
+        const j = await r.json();
+        this.textContent = j.ok ? '✅ Enregistré' : 'Pseudo refusé (lettres, chiffres, espace, - _ .)';
+      } catch (e) { this.textContent = 'Erreur, réessaie'; }
+    };
+  } catch (e) { box.innerHTML = '<div style="margin-top:14px;font-size:13px">⚠️ Classement indisponible pour le moment (le serveur ne répond pas).</div>'; }
+}
+
+let mainOff = 0, mainDl = 0;
+function fmtLeft(ms) { const m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60); return (d ? d + ' j ' : '') + h + ' h ' + (m % 60) + ' min'; }
+function paintMain() {
+  const el = document.getElementById('ctMain'); if (!el) return;
+  if (!mainDl || !isOnline()) { el.textContent = ''; return; }
+  const ms = mainDl - (Date.now() + mainOff);
+  el.textContent = ms > 0 ? '🏆 Concours : fin dans ' + fmtLeft(ms) : '🏁 Concours terminé : classement figé';
+}
+async function mainTimer() {
+  if (!isOnline()) { paintMain(); return; }
+  try {
+    const r = await fetch('/api/time', { cache: 'no-store' });
+    if (!r.ok) return;
+    const j = await r.json();
+    mainOff = j.now - Date.now(); mainDl = j.deadline; paintMain();
+  } catch (e) {}
+}
+setInterval(paintMain, 30000);
+window.addEventListener('online', mainTimer);
+window.addEventListener('offline', paintMain);
+let badgeOverlay = null;
+function renderBadges() {
+  if (!badgeOverlay) return;
+  const grid = (tiers, val, unit) => '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + tiers.map(t => {
+    const ok = val >= t[0];
+    return '<div style="text-align:center;padding:8px 2px;border-radius:12px;background:#22314f;opacity:' + (ok ? 1 : 0.6) + '">' + badgeSvg(t[3], t[4], t[0], !ok) + '<div style="font-size:11px;font-weight:800">' + t[1] + '</div><div style="font-size:10px;color:#a8b2dc">' + (ok ? '✔ +' + t[2] + ' 🪙' : t[0] + ' ' + unit) + '</div></div>';
+  }).join('') + '</div>';
+  badgeOverlay.querySelector('.bd').innerHTML =
+    '<div style="font-size:14px;margin-bottom:10px;line-height:1.6">👥 Amis invités : <b>' + friends + '</b><br>📤 Partages : <b>' + shares + '</b></div>' +
+    '<div style="background:#22314f;border-radius:12px;padding:10px;margin-bottom:12px;font-size:12px;word-break:break-all">' + myLink() + '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:14px"><button id="bdInvite" class="' + BTN_P + '" type="button" style="flex:1">📤 Inviter</button><button id="bdCopy" class="' + BTN_G + '" type="button" style="flex:1">Copier</button></div>' +
+    '<a href="https://chat.whatsapp.com/FpGjCKBnWRi1k8Lc1bShXK" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-bottom:14px;padding:12px;border-radius:12px;background:#22c55e;color:#04210f;font-weight:900">💬 Rejoindre le groupe WhatsApp</a>' + '<div style="font-weight:900;margin-bottom:6px">👥 Ambassadeur</div>' + grid(FRIEND_TIERS, friends, 'amis') +
+    '<div style="font-weight:900;margin:14px 0 6px">📤 Partageur</div>' + grid(SHARE_TIERS, shares, 'partages') +
+    '<div style="font-size:11px;color:#a8b2dc;margin-top:12px;line-height:1.4">Un ami compte quand il joue sa première partie avec ton lien. Pour voir tes amis, il faut être connecté à internet.</div>';
+  badgeOverlay.querySelector('#bdInvite').onclick = doInvite;
+  badgeOverlay.querySelector('#bdCopy').onclick = () => {
+    const t = myLink();
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => giftToast('Lien copié !')).catch(() => window.prompt('Copie ton lien :', t));
+    else window.prompt('Copie ton lien :', t);
+    registerShare();
+  };
+}
+function openBadges() {
+  if (badgeOverlay) return;
+  const o = document.createElement('div');
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px';
+  o.innerHTML = '<div style="background:#16233c;color:#eef2ff;border-radius:18px;padding:16px;max-width:380px;width:100%;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="margin:0;font-size:20px">🏅 Badges et amis</h2><button id="bdX" class="' + BTN_G + ' small" type="button">✕</button></div><div id="ct"></div><div class="bd"></div></div>';
+  document.body.appendChild(o); badgeOverlay = o;
+  const close = () => { o.remove(); badgeOverlay = null; };
+  o.addEventListener('click', e => { if (e.target === o) close(); });
+  o.querySelector('#bdX').onclick = close;
+  renderBadges(); refreshFriends(); loadContest();
+}
+document.getElementById('badgesBtn').addEventListener('click', openBadges);
+const _ow = document.getElementById('openWeekBtn'); if (_ow) _ow.addEventListener('click', openBadges);
+const _ib = document.getElementById('inviteBtn'); if (_ib) _ib.addEventListener('click', doInvite);
+checkBadges(); joinIfNeeded(); refreshFriends(); mainTimer();
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
